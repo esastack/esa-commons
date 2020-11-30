@@ -1,0 +1,1 @@
+noDefault = esa.commons.spi.extensionloader.noparam.NoDefaultSpiImpl

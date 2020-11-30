@@ -1,0 +1,15 @@
+innerImpl1 = esa.commons.spi.extensionloader.wrapper.SpiInnerImpl1  # default impl
+
+# wrong class
+myClass = esa.commons.spi.extensionloader.wrapper.MyClass
+normalClass = esa.commons.spi.extensionloader.wrapper.NormalClass
+
+innerImpl2 = esa.commons.spi.extensionloader.wrapper.SpiInnerImpl2
+innerImpl3 = esa.commons.spi.extensionloader.wrapper.SpiInnerImpl3
+innerImplDup3 = esa.commons.spi.extensionloader.wrapper.SpiInnerImpl3
+
+wrapper1 = esa.commons.spi.extensionloader.wrapper.SpiWrapperImpl1
+esa.commons.spi.extensionloader.wrapper.SpiWrapperImpl2
+
+esa.commons.spi.extensionloader.noparam.RightDefaultSpi
+

@@ -1,0 +1,7 @@
+wrapperInnerImpl = esa.commons.spi.extensionloader.sort.wrapper.InnerImpl
+wrapperImpl1 = esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl1
+esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl2
+esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl3
+esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl4
+esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl5
+esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl5

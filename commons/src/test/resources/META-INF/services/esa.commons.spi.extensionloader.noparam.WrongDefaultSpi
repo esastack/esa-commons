@@ -1,0 +1,2 @@
+wrong = esa.commons.spi.extensionloader.noparam.WrongDefaultSpiImpl
+esa.commons.spi.extensionloader.noparam.WrongDefaultSpiImpl
