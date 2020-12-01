@@ -15,7 +15,7 @@
  */
 package esa.commons.jmh.concurrent;
 
-import esa.commons.concurrent.SpscArrayQueue;
+import esa.commons.concurrencytest.SpscArrayQueue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.Queue;

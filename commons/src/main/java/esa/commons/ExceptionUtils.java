@@ -15,7 +15,7 @@
  */
 package esa.commons;
 
-import esa.commons.concurrent.UnsafeUtils;
+import esa.commons.concurrencytest.UnsafeUtils;
 import esa.commons.io.IOUtils;
 import esa.commons.io.StringBuilderWriter;
 

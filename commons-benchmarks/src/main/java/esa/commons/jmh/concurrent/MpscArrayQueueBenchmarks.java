@@ -15,8 +15,8 @@
  */
 package esa.commons.jmh.concurrent;
 
-import esa.commons.concurrent.MpscArrayBuffer;
-import esa.commons.concurrent.MpscArrayQueue;
+import esa.commons.concurrencytest.MpscArrayBuffer;
+import esa.commons.concurrencytest.MpscArrayQueue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.Queue;
