@@ -15,6 +15,7 @@
  */
 package esa.commons.concurrencytest;
 
+import esa.commons.concurrent.MpscArrayBuffer;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Arbiter;
 import org.openjdk.jcstress.annotations.JCStressTest;

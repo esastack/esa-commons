@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 import esa.commons.ClassUtils;
 

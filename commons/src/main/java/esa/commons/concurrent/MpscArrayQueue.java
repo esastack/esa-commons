@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 
 import esa.commons.Checks;
 
 import java.util.Iterator;
 import java.util.function.Consumer;
-
-import static esa.commons.concurrencytest.UnsafeArrayUtils.getElementAcquire;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.lazySetElement;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.setElement;
 
 /**
  * Implementation of {@link Buffer} that aims to be used in Multiple producer-Single consumer environment.
@@ -53,7 +49,7 @@ public class MpscArrayQueue<E> extends LhsMpscArrayQueueConsumerIdxPad<E> implem
             }
         } while (!casProducerIdx(producerIdx, producerIdx + 1));
         final long offset = calcElementOffset(producerIdx, mask);
-        lazySetElement(this.elements, offset, e);
+        UnsafeArrayUtils.lazySetElement(this.elements, offset, e);
         return true;
     }
 
@@ -79,7 +75,7 @@ public class MpscArrayQueue<E> extends LhsMpscArrayQueueConsumerIdxPad<E> implem
         }
 
         final long offset = calcElementOffset(producerIdx, mask);
-        lazySetElement(this.elements, offset, e);
+        UnsafeArrayUtils.lazySetElement(this.elements, offset, e);
         return 0;
     }
 
@@ -89,17 +85,17 @@ public class MpscArrayQueue<E> extends LhsMpscArrayQueueConsumerIdxPad<E> implem
         final long consumerIdx = getConsumerIdx();
         final long offset = calcElementOffset(consumerIdx, mask());
         final E[] arr = this.elements;
-        E e = getElementAcquire(arr, offset);
+        E e = UnsafeArrayUtils.getElementAcquire(arr, offset);
         if (e == null) {
             if (consumerIdx != getProducerIdxAcquire()) {
                 do {
-                    e = getElementAcquire(arr, offset);
+                    e = UnsafeArrayUtils.getElementAcquire(arr, offset);
                 } while (e == null);
             } else {
                 return null;
             }
         }
-        setElement(arr, offset, null);
+        UnsafeArrayUtils.setElement(arr, offset, null);
         lazySetConsumerIdx(consumerIdx + 1);
         return e;
     }
@@ -110,11 +106,11 @@ public class MpscArrayQueue<E> extends LhsMpscArrayQueueConsumerIdxPad<E> implem
         final long consumerIdx = getConsumerIdx();
         final long offset = calcElementOffset(consumerIdx, mask());
         final E[] arr = this.elements;
-        E e = getElementAcquire(arr, offset);
+        E e = UnsafeArrayUtils.getElementAcquire(arr, offset);
         if (e == null) {
             if (consumerIdx != getProducerIdxAcquire()) {
                 do {
-                    e = getElementAcquire(arr, offset);
+                    e = UnsafeArrayUtils.getElementAcquire(arr, offset);
                 } while (e == null);
             } else {
                 return null;
@@ -136,11 +132,11 @@ public class MpscArrayQueue<E> extends LhsMpscArrayQueueConsumerIdxPad<E> implem
         for (int i = 0; i < limit; i++) {
             final long index = consumerIdx + i;
             final long offset = calcElementOffset(index, mask);
-            final E e = getElementAcquire(buffer, offset);
+            final E e = UnsafeArrayUtils.getElementAcquire(buffer, offset);
             if (e == null) {
                 return i;
             }
-            setElement(buffer, offset, null);
+            UnsafeArrayUtils.setElement(buffer, offset, null);
             lazySetConsumerIdx(index + 1);
             c.accept(e);
         }

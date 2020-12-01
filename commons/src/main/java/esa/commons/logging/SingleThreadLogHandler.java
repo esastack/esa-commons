@@ -20,9 +20,9 @@ import esa.commons.ExceptionUtils;
 import esa.commons.MathUtils;
 import esa.commons.Platforms;
 import esa.commons.StringUtils;
-import esa.commons.concurrencytest.Buffer;
-import esa.commons.concurrencytest.MpscArrayBuffer;
-import esa.commons.concurrencytest.UnsafeUtils;
+import esa.commons.concurrent.Buffer;
+import esa.commons.concurrent.MpscArrayBuffer;
+import esa.commons.concurrent.UnsafeUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;

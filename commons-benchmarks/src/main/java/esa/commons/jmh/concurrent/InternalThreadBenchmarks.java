@@ -15,8 +15,8 @@
  */
 package esa.commons.jmh.concurrent;
 
-import esa.commons.concurrencytest.InternalThread;
-import esa.commons.concurrencytest.ThreadFactories;
+import esa.commons.concurrent.InternalThread;
+import esa.commons.concurrent.ThreadFactories;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.FastThreadLocal;
 import org.openjdk.jmh.annotations.*;

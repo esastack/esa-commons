@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 import esa.commons.Checks;
 
 import java.util.Iterator;
 import java.util.function.Consumer;
-
-import static esa.commons.concurrencytest.UnsafeArrayUtils.getElementAcquire;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.lazySetElement;
 
 /**
  * Implementation of {@link Buffer} that aims to be used in Single producer-Single consumer environment.
@@ -40,8 +37,8 @@ public class SpscArrayQueue<E> extends LhsSpscArrayQueueConsumerIdxPad<E> {
         final long offset = calcElementOffset(producerIdx, mask);
         final E[] arr = this.elements;
 
-        if (getElementAcquire(arr, offset) == null) {
-            lazySetElement(arr, offset, e);
+        if (UnsafeArrayUtils.getElementAcquire(arr, offset) == null) {
+            UnsafeArrayUtils.lazySetElement(arr, offset, e);
             // visible for size()
             lazySetProducerIdx(producerIdx + 1);
             return true;
@@ -55,18 +52,18 @@ public class SpscArrayQueue<E> extends LhsSpscArrayQueueConsumerIdxPad<E> {
         final long consumerIndex = getConsumerIdx();
         final long offset = calcElementOffset(consumerIndex, mask());
         final E[] arr = this.elements;
-        final E e = getElementAcquire(arr, offset);
+        final E e = UnsafeArrayUtils.getElementAcquire(arr, offset);
         if (e == null) {
             return null;
         }
-        lazySetElement(arr, offset, null);
+        UnsafeArrayUtils.lazySetElement(arr, offset, null);
         lazySetConsumerIdx(consumerIndex + 1);
         return e;
     }
 
     @Override
     public E peek() {
-        return getElementAcquire(elements, calcElementOffset(getConsumerIdx(), mask()));
+        return UnsafeArrayUtils.getElementAcquire(elements, calcElementOffset(getConsumerIdx(), mask()));
     }
 
     public int drain(Consumer<E> c) {
@@ -81,11 +78,11 @@ public class SpscArrayQueue<E> extends LhsSpscArrayQueueConsumerIdxPad<E> {
         for (int i = 0; i < limit; i++) {
             final long index = consumerIdx + i;
             final long offset = calcElementOffset(index, mask);
-            final E e = getElementAcquire(buffer, offset);
+            final E e = UnsafeArrayUtils.getElementAcquire(buffer, offset);
             if (e == null) {
                 return i;
             }
-            lazySetElement(buffer, offset, null);
+            UnsafeArrayUtils.lazySetElement(buffer, offset, null);
             lazySetConsumerIdx(index + 1);
             c.accept(e);
         }

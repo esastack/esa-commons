@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 import esa.commons.Checks;
 import esa.commons.MathUtils;
@@ -21,9 +21,9 @@ import sun.misc.Unsafe;
 
 import java.util.AbstractQueue;
 
-import static esa.commons.concurrencytest.UnsafeArrayUtils.ARRAY_INDEX_SCALE;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.REF_ARRAY_BASE;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.REF_ARRAY_ELEMENT_SHIFT;
+import static esa.commons.concurrent.UnsafeArrayUtils.ARRAY_INDEX_SCALE;
+import static esa.commons.concurrent.UnsafeArrayUtils.REF_ARRAY_BASE;
+import static esa.commons.concurrent.UnsafeArrayUtils.REF_ARRAY_ELEMENT_SHIFT;
 
 abstract class UnsafePaddedArray<E> extends LhsArrayPad<E> {
     private static final int ELEMENTS_PAD = 128 / ARRAY_INDEX_SCALE;

@@ -13,52 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 import esa.commons.annotation.Beta;
 import esa.commons.annotation.Internal;
-import io.netty.util.concurrent.FastThreadLocalThread;
 
 /**
- * Implementation of {@link InternalThread} that extends the {@link FastThreadLocalThread} which aims to be used in
- * netty.
+ * Default implementation of {@link InternalThread} that extends the {@link Thread}.
  */
 @Beta
 @Internal
-public class NettyInternalThread extends FastThreadLocalThread implements InternalThread {
+public class InternalThreadImpl extends Thread implements InternalThread {
 
     private Object meter;
     private Object tracer;
 
-    public NettyInternalThread() {
+    public InternalThreadImpl() {
         super();
     }
 
-    public NettyInternalThread(Runnable target) {
+    public InternalThreadImpl(Runnable target) {
         super(target);
     }
 
-    public NettyInternalThread(ThreadGroup group, Runnable target) {
+    public InternalThreadImpl(ThreadGroup group, Runnable target) {
         super(group, target);
     }
 
-    public NettyInternalThread(String name) {
+    public InternalThreadImpl(String name) {
         super(name);
     }
 
-    public NettyInternalThread(ThreadGroup group, String name) {
+    public InternalThreadImpl(ThreadGroup group, String name) {
         super(group, name);
     }
 
-    public NettyInternalThread(Runnable target, String name) {
+    public InternalThreadImpl(Runnable target, String name) {
         super(target, name);
     }
 
-    public NettyInternalThread(ThreadGroup group, Runnable target, String name) {
+    public InternalThreadImpl(ThreadGroup group, Runnable target, String name) {
         super(group, target, name);
     }
 
-    public NettyInternalThread(ThreadGroup group, Runnable target, String name, long stackSize) {
+    public InternalThreadImpl(ThreadGroup group, Runnable target, String name, long stackSize) {
         super(group, target, name, stackSize);
     }
 
