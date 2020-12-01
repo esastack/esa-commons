@@ -20,7 +20,7 @@ import esa.commons.ClassUtils;
 import esa.commons.ExceptionUtils;
 import esa.commons.Platforms;
 import esa.commons.StringUtils;
-import esa.commons.concurrent.UnsafeUtils;
+import esa.commons.concurrencytest.UnsafeUtils;
 import esa.commons.reflect.ReflectionUtils;
 import sun.misc.Unsafe;
 

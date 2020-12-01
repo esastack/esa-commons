@@ -22,23 +22,54 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReflectionUtilsTest {
 
     @Test
     void testGetAllDeclaredMethods() {
-        final List<Method> methods = ReflectionUtils.getAllDeclaredMethods(A.class);
-        assertEquals(13L, methods.stream().filter(m -> m.getDeclaringClass().equals(A.class)).count());
-        assertEquals(2L, methods.stream().filter(m -> m.getDeclaringClass().equals(Base.class)).count());
+        final List<String> methods = ReflectionUtils.getAllDeclaredMethods(A.class).stream()
+                .map(Method::getName)
+                .collect(Collectors.toList());
+
+        // A.class
+        assertTrue(methods.contains("getA"));
+        assertTrue(methods.contains("setA"));
+        // Base.class
+        assertTrue(methods.contains("foo"));
+        assertTrue(methods.contains("bar"));
+
+        // Object.class
+        assertFalse(methods.contains("equals"));
+        assertFalse(methods.contains("toString"));
     }
 
     @Test
     void testGetAllDeclaredFields() {
         final List<Field> methods = ReflectionUtils.getAllDeclaredFields(A.class);
-        assertEquals(4L, methods.stream().filter(m -> m.getDeclaringClass().equals(A.class)).count());
-        assertEquals(3L, methods.stream().filter(m -> m.getDeclaringClass().equals(Base.class)).count());
+        final List<String> aMethods = methods.stream()
+                .filter(m -> m.getDeclaringClass().equals(A.class))
+                .map(Field::getName)
+                .collect(Collectors.toList());
+        assertTrue(aMethods.contains("a"));
+        assertTrue(aMethods.contains("b"));
+        assertTrue(aMethods.contains("c"));
+        assertTrue(aMethods.contains("d"));
+
+        final List<String> bMethods = methods.stream()
+                .filter(m -> m.getDeclaringClass().equals(Base.class))
+                .map(Field::getName)
+                .collect(Collectors.toList());
+        assertTrue(bMethods.contains("foo"));
+        assertTrue(bMethods.contains("bar"));
+        assertTrue(bMethods.contains("baz"));
     }
 
     @Test
@@ -164,30 +195,27 @@ class ReflectionUtilsTest {
     @Test
     void testGetInterfaceMethods() {
         List<Method> methods = ReflectionUtils.getAllDeclaredMethods(ClazzB.class);
-        assertEquals(3L, methods.size());
+        assertTrue(methods.stream().anyMatch(m -> m.getName().equals("echoBase")));
+        assertTrue(methods.stream().anyMatch(m -> m.getName().equals("echo")));
+        assertTrue(methods.stream().anyMatch(m -> m.getName().equals("echoA")));
         ClazzB b = new ClazzB();
-        for (Method method: methods) {
+        for (Method method : methods) {
             try {
                 method.invoke(b, new Object[]{null});
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
+            } catch (Exception ignored) {
             }
         }
         methods = ReflectionUtils.getAllDeclaredMethods(ClazzC.class);
-        assertEquals(4L, methods.size());
+        assertTrue(methods.stream().filter(m -> m.getName().equals("echoBase")).count() > 1);
+        assertTrue(methods.stream().anyMatch(m -> m.getName().equals("echoA")));
+        assertTrue(methods.stream().anyMatch(m -> m.getName().equals("echo")));
         ClazzC c = new ClazzC();
-        for (Method method: methods) {
+        for (Method method : methods) {
             try {
                 method.invoke(c, new Object[]{null});
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
+            } catch (Exception ignored) {
             }
         }
-
     }
 
     private interface IfaceA {
