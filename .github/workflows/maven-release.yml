@@ -1,0 +1,28 @@
+name: Maven Release
+
+on:
+  release:
+    branches: [ main ]
+    types: [created]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set Jdk
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Do Release
+      uses: qcastel/github-actions-maven-release@v1.0.3
+      with:
+        release-branch-name: main 
+        git-release-bot-name: esastack-bot
+        git-release-bot-email: esa.stack@oppo.com
+        maven-repo-server-id: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
+        maven-repo-server-username: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
+        maven-repo-server-password: ${{ secrets.MVN_REPO_PRIVATE_REPO_PASSWORD }}
+        ssh-private-key: ${{ secrets.CI_PRIVATE_KEY }} 
+        maven-args: "-Dmaven.javadoc.skip=true -Psonatype-oss-release"
