@@ -26,4 +26,4 @@ jobs:
       uses: codecov/codecov-action@v1.0.2
       with:
           token: ${{secrets.CODECOV_TOKEN}}
-          file: esa-commons/target/site/jacoco/jacoco.xml
+          directory: esa-commons
