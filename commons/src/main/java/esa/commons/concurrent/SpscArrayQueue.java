@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package esa.commons.concurrencytest;
+package esa.commons.concurrent;
 
 import esa.commons.Checks;
 
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-import static esa.commons.concurrencytest.UnsafeArrayUtils.getElementAcquire;
-import static esa.commons.concurrencytest.UnsafeArrayUtils.lazySetElement;
+import static esa.commons.concurrent.UnsafeArrayUtils.getElementAcquire;
+import static esa.commons.concurrent.UnsafeArrayUtils.lazySetElement;
 
 /**
  * Implementation of {@link Buffer} that aims to be used in Single producer-Single consumer environment.

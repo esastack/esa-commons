@@ -18,7 +18,7 @@ package esa.commons.logging;
 import esa.commons.Checks;
 import esa.commons.ExceptionUtils;
 import esa.commons.StringUtils;
-import esa.commons.concurrencytest.ThreadFactories;
+import esa.commons.concurrent.ThreadFactories;
 import esa.commons.io.IOUtils;
 
 import java.io.File;
