@@ -197,10 +197,8 @@
                 <version>2.5.3</version>
                 <configuration>
                     <useReleaseProfile>false</useReleaseProfile>
-                    <arguments>-P restricted-release,sonatype-oss-release,full</arguments>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
-                    <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
             <plugin>
