@@ -22,3 +22,8 @@ jobs:
         java-version: 1.8
     - name: Build with Maven
       run: mvn clean package
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1.0.2
+      with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          file: esa-commons/target/site/jacoco/jacoco.xml
