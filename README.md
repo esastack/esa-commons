@@ -1,8 +1,7 @@
 # ESA Commons
 
-[![Build Status](https://travis-ci.com/esastack/esa-commons.svg?branch=main)](https://travis-ci.com/esastack/esa-commons)
-[![codecov](https://codecov.io/gh/esastack/esa-commons/branch/main/graph/badge.svg?token=HUHT6S30PD)](https://codecov.io/gh/esastack/esa-commons)
 [![GitHub license](https://img.shields.io/github/license/esastack/esa-commons)](https://github.com/esastack/esa-commons/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/esastack/esa-commons/branch/main/graph/badge.svg?token=HUHT6S30PD)](https://codecov.io/gh/esastack/esa-commons)
 
 
 ESA Commons is the common lib of `ESA Stack`.
