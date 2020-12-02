@@ -2,7 +2,7 @@ name: Maven Release
 
 on:
   release:
-    branches: [ main ]
+    branches: [ v* ]
     types: [created, edited]
 
 jobs:
