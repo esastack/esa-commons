@@ -17,13 +17,13 @@ jobs:
 #       with:
 #         java-version: 1.8
     - uses: nelonoel/branch-name@v1.0.1
-    - run: echo ${BRANCH_NAME}
+    - run:  echo "::set-env name=BRANCH_NAME::${BRANCH_NAME}"
     - name: Do Release
       uses: qcastel/github-actions-maven-release@v1.12.5
       env:
         JAVA_HOME: /usr/lib/jvm/java-1.8-openjdk/ 
       with:
-        release-branch-name: ${BRANCH_NAME}
+        release-branch-name: ${{BRANCH_NAME}}
         git-release-bot-name: ESAStackAdmin
         git-release-bot-email: esa.stack@oppo.com
         maven-repo-server-id: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
