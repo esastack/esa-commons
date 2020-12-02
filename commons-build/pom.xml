@@ -19,7 +19,7 @@
 
     <groupId>com.github.esastack</groupId>
     <artifactId>commons-build</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
 
     <name>Commons :: build</name>
     <description>
@@ -36,9 +36,9 @@
 
     <scm>
         <url>https://github.com/esastack/esa-commons</url>
-        <connection>scm:git:git://github.com:esastack/esa-commons.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:esastack/esa-commons.git</developerConnection>
-        <tag>v0.0.1</tag>
+        <connection>scm:git:git://github.com/esastack/esa-commons.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/esastack/esa-commons.git</developerConnection>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
