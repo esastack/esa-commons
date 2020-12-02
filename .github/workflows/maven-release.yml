@@ -17,7 +17,7 @@ jobs:
           release-branch-name: main
           git-release-bot-name: ESAStackAdmin
           git-release-bot-email: esa.stack@oppo.com
-          maven-repo-server-id: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
+          maven-repo-server-id: ${{ secrets.MVN_REPO_PRIVATE_REPO_ID }}
           maven-repo-server-username: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
           maven-repo-server-password: ${{ secrets.MVN_REPO_PRIVATE_REPO_PASSWORD }}
           ssh-private-key: ${{ secrets.CI_PRIVATE_KEY }}
