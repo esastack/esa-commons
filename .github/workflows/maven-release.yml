@@ -20,7 +20,7 @@ jobs:
       uses: qcastel/github-actions-maven-release@v1.12.5
       with:
         release-branch-name: v0.0.1
-        git-release-bot-name: esastack-bot
+        git-release-bot-name: ESAStackAdmin
         git-release-bot-email: esa.stack@oppo.com
         maven-repo-server-id: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
         maven-repo-server-username: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
