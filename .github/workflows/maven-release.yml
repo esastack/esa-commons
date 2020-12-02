@@ -25,5 +25,5 @@ jobs:
           gpg-key-id: ${{ secrets.CI_GPG_KEY_ID }}
           gpg-key: ${{ secrets.CI_GPG_KEY }}
           gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
-          maven-args: "-Dmaven.javadoc.skip=true"
+          maven-args: "-Dmaven.javadoc.skip=true -X"
           skip-perform: true
