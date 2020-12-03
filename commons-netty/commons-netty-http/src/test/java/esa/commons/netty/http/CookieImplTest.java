@@ -61,7 +61,6 @@ class CookieImplTest {
         cookie.setWrap(true);
         cookie.setDomain("d");
         cookie.setPath("p");
-        cookie.setMaxAge(1L);
         cookie.setSecure(true);
         cookie.setHttpOnly(true);
 
