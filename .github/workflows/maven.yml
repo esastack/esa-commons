@@ -5,9 +5,16 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches-ignore:
+      - '**-alpha'
+      - '**-tmp'
+      - '**-temp'
   pull_request:
-    branches: [ main ]
+    branches-ignore:
+      - '**-alpha'
+      - '**-tmp'
+      - '**-temp'
+  workflow_dispatch:
 
 jobs:
   build:
