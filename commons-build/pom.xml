@@ -19,7 +19,7 @@
 
     <groupId>com.github.esastack</groupId>
     <artifactId>commons-build</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <name>Commons :: build</name>
     <description>
@@ -50,7 +50,7 @@
 
     <profiles>
         <profile>
-            <id>sonatype-oss-release</id>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
@@ -66,6 +66,19 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <configuration>
+                            <detectOfflineLinks>false</detectOfflineLinks>
+                            <breakiterator>true</breakiterator>
+                            <version>false</version>
+                            <author>false</author>
+                            <keywords>true</keywords>
+                            <doclint>all,-missing</doclint>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -99,6 +112,7 @@
                 <version>3.0.0-M1</version>
                 <configuration>
                     <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
@@ -107,29 +121,13 @@
         </plugins>
     </build>
 
-    <repositories>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <distributionManagement>
         <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
+            <id>ossrh</id>
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
