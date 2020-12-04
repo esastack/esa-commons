@@ -2,6 +2,7 @@
 
 ![Build](https://github.com/esastack/esa-commons/workflows/Build/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/esastack/esa-commons/branch/main/graph/badge.svg?token=HUHT6S30PD)](https://codecov.io/gh/esastack/esa-commons)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.esastack/commons/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.esastack/commons/)
 [![GitHub license](https://img.shields.io/github/license/esastack/esa-commons)](https://github.com/esastack/esa-commons/blob/main/LICENSE)
 
 
