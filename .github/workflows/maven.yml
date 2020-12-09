@@ -5,16 +5,21 @@ name: Build
 
 on:
   push:
-    branches-ignore:
+    branches-ignore: 
       - '**-alpha'
       - '**-tmp'
       - '**-temp'
   pull_request:
-    branches-ignore:
+    branches-ignore: 
       - '**-alpha'
       - '**-tmp'
       - '**-temp'
   workflow_dispatch:
+    inputs:
+      profiles:
+        description: 'mvn -P <arg>'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -28,7 +33,11 @@ jobs:
       with:
         java-version: 1.8
     - name: Clean and Package
+      if: github.event.inputs.profiles == ''
       run: mvn clean package
+    - name: Clean and Package With Profiles
+      if: github.event.inputs.profiles != ''
+      run: mvn -P ${{ github.event.inputs.profiles }} clean package
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1.0.2
       with:
