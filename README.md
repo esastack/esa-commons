@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/esastack/esa-commons/workflows/Build/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/esastack/esa-commons/branch/main/graph/badge.svg?token=HUHT6S30PD)](https://codecov.io/gh/esastack/esa-commons)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.esastack/commons/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.esastack/commons/)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.esastack/commons/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.esastack/commons/)
 [![GitHub license](https://img.shields.io/github/license/esastack/esa-commons)](https://github.com/esastack/esa-commons/blob/main/LICENSE)
 
 
@@ -23,7 +23,7 @@ ESA Commons is the common lib of `ESA Stack`.
 
 ```xml
 <dependency>
-    <groupId>com.github.esastack</groupId>
+    <groupId>io.esastack</groupId>
     <artifactId>commons</artifactId>
     <version>${esa-httpserver.version}</version>
 </dependency>
@@ -277,11 +277,11 @@ add spec file to `META-INF/services/`, or `META-INF/esa/`, or  `META-INF/esa/int
 
 so we add a spec file
 
-> META-INF/services/com.github.esastack.commons.Shape
+> META-INF/services/io.esastack.commons.Shape
 >
 > ```
-> com.github.esastack.commons.Circle
-> com.github.esastack.commons.Triangle
+> io.esastack.commons.Circle
+> io.esastack.commons.Triangle
 > ```
 
 use `SpiLoader` to get SPI extensions
