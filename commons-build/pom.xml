@@ -161,7 +161,7 @@
                 <version>3.0.0-M1</version>
                 <configuration>
                     <useReleaseProfile>false</useReleaseProfile>
-                    <releaseProfiles>release</releaseProfiles>
+                    <releaseProfiles>release,export-javadoc</releaseProfiles>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
