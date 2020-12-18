@@ -140,13 +140,13 @@ public final class ReflectionUtils {
             return null;
         }
         List<Method> methods = getAllDeclaredMethods(field.getDeclaringClass());
+        final String fieldName = field.getName();
         for (Method method : methods) {
-            String fieldName = field.getName();
             String methodName = method.getName();
             if (isSetter(method)
                     && fieldName.toUpperCase().charAt(0) == methodName.charAt(3)
-                    && (fieldName.length() == 1
-                    || methodName.endsWith(fieldName.substring(1)))
+                    && methodName.length() - fieldName.length() == 3
+                    && (fieldName.length() == 1 || methodName.endsWith(fieldName.substring(1)))
                     && method.getParameterTypes()[0].equals(field.getType())) {
                 return method;
             }
@@ -159,16 +159,17 @@ public final class ReflectionUtils {
             return null;
         }
         List<Method> methods = getAllDeclaredMethods(field.getDeclaringClass());
+        final String fieldName = field.getName();
         for (Method method : methods) {
-            String fieldName = field.getName();
             String methodName = method.getName();
-            if (isGetter(method)
-                    && (fieldName.toUpperCase().charAt(0)
-                    == methodName.charAt((methodName.length() > 3 && !field.getType().equals(boolean.class)) ? 3 : 2))
-                    && (fieldName.length() == 1
-                    || methodName.endsWith(fieldName.substring(1)))
-                    && method.getReturnType().equals(field.getType())) {
-                return method;
+            if (isGetter(method)) {
+                int off = methodName.startsWith("is") ? 2 : 3;
+                if (fieldName.toUpperCase().charAt(0) == methodName.charAt(off)
+                        && methodName.length() - fieldName.length() == off
+                        && (fieldName.length() == 1 || methodName.endsWith(fieldName.substring(1)))
+                        && method.getReturnType().equals(field.getType())) {
+                    return method;
+                }
             }
         }
         return null;
