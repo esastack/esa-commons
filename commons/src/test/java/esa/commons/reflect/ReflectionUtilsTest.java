@@ -171,6 +171,10 @@ class ReflectionUtilsTest {
         assertNull(ReflectionUtils.getGetter(Base.class.getDeclaredField("baz")));
         assertEquals("getA",
                 ReflectionUtils.getGetter(A.class.getDeclaredField("a")).getName());
+        assertEquals("getAbc",
+                ReflectionUtils.getGetter(A.class.getDeclaredField("abc")).getName());
+        assertEquals("getAba",
+                ReflectionUtils.getGetter(A.class.getDeclaredField("aba")).getName());
         assertEquals("isB",
                 ReflectionUtils.getGetter(A.class.getDeclaredField("b")).getName());
         assertEquals("getC",
@@ -184,6 +188,10 @@ class ReflectionUtilsTest {
         assertNull(ReflectionUtils.getGetter(Base.class.getDeclaredField("baz")));
         assertEquals("setA",
                 ReflectionUtils.getSetter(A.class.getDeclaredField("a")).getName());
+        assertEquals("setAbc",
+                ReflectionUtils.getSetter(A.class.getDeclaredField("abc")).getName());
+        assertEquals("setAba",
+                ReflectionUtils.getSetter(A.class.getDeclaredField("aba")).getName());
         assertEquals("setB",
                 ReflectionUtils.getSetter(A.class.getDeclaredField("b")).getName());
         assertEquals("setC",
@@ -294,6 +302,24 @@ class ReflectionUtilsTest {
         private boolean b;
         private Boolean c;
         private int d;
+        private String abc;
+        private String aba;
+
+        private String getAba() {
+            return aba;
+        }
+
+        private void setAba(String aba) {
+            this.aba = aba;
+        }
+
+        private String getAbc() {
+            return abc;
+        }
+
+        private void setAbc(String a) {
+            this.abc = abc;
+        }
 
         private String getA() {
             return a;
