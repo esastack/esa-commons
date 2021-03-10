@@ -21,8 +21,6 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
@@ -306,87 +304,6 @@ public final class SecurityUtils {
         }
     }
 
-    public static class ThreeDes {
-        public static class ECB {
-            public static final String ECB = "DESede/ECB/PKCS5Padding";
-
-            public static byte[] decrypt(byte[] data, byte[] key) {
-                try {
-                    Key keyObject = toKey(key);
-                    Cipher cipher = Cipher.getInstance(ECB);
-                    cipher.init(Cipher.DECRYPT_MODE, keyObject);
-                    return cipher.doFinal(data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public static byte[] encrypt(byte[] data, byte[] key) {
-                try {
-                    Key keyObject = toKey(key);
-                    Cipher cipher = Cipher.getInstance(ECB);
-                    cipher.init(Cipher.ENCRYPT_MODE, keyObject);
-                    return cipher.doFinal(data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        public static class CBC {
-            public static final String CBC = "DESede";
-
-            public static byte[] decrypt(byte[] data, byte[] key, byte[] iv) {
-                try {
-                    Key keyObject = toKey(key);
-                    Cipher cipher = Cipher.getInstance(CBC);
-                    AlgorithmParameterSpec params = new IvParameterSpec(iv);
-                    cipher.init(Cipher.DECRYPT_MODE, keyObject, params);
-                    return cipher.doFinal(data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public static byte[] encrypt(byte[] data, byte[] key, byte[] iv) {
-                try {
-                    Key keyObject = toKey(key);
-                    Cipher cipher = Cipher.getInstance(CBC);
-                    AlgorithmParameterSpec params = new IvParameterSpec(iv);
-                    cipher.init(Cipher.ENCRYPT_MODE, keyObject, params);
-                    return cipher.doFinal(data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-
-        public static byte[] genKey(int length) {
-            try {
-                KeyGenerator keyGenerator = KeyGenerator.getInstance("DESede");
-                keyGenerator.init(length);
-
-                SecretKey secretKey = keyGenerator.generateKey();
-
-                return secretKey.getEncoded();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-
-        private static Key toKey(byte[] key) {
-            try {
-                DESedeKeySpec dks = new DESedeKeySpec(key);
-                SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DESede");
-                return keyFactory.generateSecret(dks);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     public static class AES {
 
         public static byte[] genKey(int size) {
@@ -399,43 +316,6 @@ public final class SecurityUtils {
                 throw new RuntimeException(e);
             }
         }
-
-        public static class ECB {
-            private static final String ECB = "AES/ECB/PKCS5Padding";
-
-            public static byte[] encrypt(byte[] data, byte[] key) {
-                try {
-                    SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-                    Cipher cipher = Cipher.getInstance(ECB);
-                    cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-                    return cipher.doFinal(data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public static byte[] encrypt(byte[] data, String key) {
-                byte[] keyBytes = hexToBin(key);
-                return encrypt(data, keyBytes);
-            }
-
-            public static byte[] decrypt(byte[] encryptedData, byte[] key) {
-                try {
-                    SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-                    Cipher cipher = Cipher.getInstance(ECB);
-                    cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-                    return cipher.doFinal(encryptedData);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public static byte[] decrypt(byte[] encryptedData, String key) {
-                byte[] keyBytes = hexToBin(key);
-                return decrypt(encryptedData, keyBytes);
-            }
-        }
-
 
         public static class CBC {
             private static final String CBC = "AES/CBC/PKCS5Padding";
