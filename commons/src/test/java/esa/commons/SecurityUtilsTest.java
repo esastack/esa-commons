@@ -17,9 +17,11 @@ package esa.commons;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SecurityUtilsTest {
 
@@ -42,4 +44,45 @@ class SecurityUtilsTest {
         assertNotNull(encoded);
         assertEquals(encoded, SecurityUtils.md5Encode("foo"));
     }
+
+    @Test
+    void testECSDA() {
+        final SecurityUtils.ECDSA.ECDSAKey key = SecurityUtils.ECDSA.genKey(256);
+        assertNotNull(key);
+        assertTrue(key.toString().contains(key.getPrivateKey()));
+        assertTrue(key.toString().contains(key.getPublicKey()));
+        final byte[] data = "hello".getBytes();
+
+        assertTrue(SecurityUtils.ECDSA.verify(data,
+                SecurityUtils.ECDSA.sign(data, key.getPrivateKey()),
+                key.getPublicKey()));
+    }
+
+    @Test
+    void testRSA() {
+        final SecurityUtils.RSA.RSAKey key = SecurityUtils.RSA.genKey(1024);
+        assertNotNull(key);
+        assertTrue(key.toString().contains(key.getPrivateKey()));
+        assertTrue(key.toString().contains(key.getPublicKey()));
+        final byte[] data = "hello".getBytes();
+        assertArrayEquals(data,
+                SecurityUtils.RSA.decryptByPrivateKey(SecurityUtils.RSA.encryptByPublicKey(data, key.getPublicKey()),
+                        key.getPrivateKey()));
+
+        assertTrue(SecurityUtils.RSA.verify(data,
+                SecurityUtils.RSA.sign(data, key.getPrivateKey()),
+                key.getPublicKey()));
+    }
+
+    @Test
+    void testAES() {
+        final String key = SecurityUtils.binToHex(SecurityUtils.AES.genKey(128));
+        assertNotNull(key);
+        final byte[] data = "hello".getBytes();
+        final byte[] iv = "abcdefghijklmnop".getBytes();
+        assertArrayEquals(data,
+                SecurityUtils.AES.CBC.decrypt(SecurityUtils.AES.CBC.encrypt(data, key, iv), key, iv));
+    }
+
+
 }
