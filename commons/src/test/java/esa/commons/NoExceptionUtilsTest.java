@@ -17,6 +17,7 @@ class NoExceptionUtilsTest {
     @Test
     void testSafeWarnLog() {
         final Logger logger = mock(Logger.class);
+        assertDoesNotThrow(() -> NoExceptionUtils.WARN(logger, "foo", new IllegalArgumentException()));
         doThrow(new IllegalStateException()).when(logger).warn(any(String.class), any(Throwable.class));
         assertDoesNotThrow(() -> NoExceptionUtils.WARN(logger, "foo", new IllegalArgumentException()));
     }
@@ -24,6 +25,7 @@ class NoExceptionUtilsTest {
     @Test
     void testSafeInfoLog() {
         final Logger logger = mock(Logger.class);
+        assertDoesNotThrow(() -> NoExceptionUtils.WARN(logger, "foo", new IllegalArgumentException()));
         doThrow(new IllegalStateException()).when(logger).info(any(String.class), any(Throwable.class));
         assertDoesNotThrow(() -> NoExceptionUtils.INFO(logger, "foo", new IllegalArgumentException()));
     }
@@ -31,13 +33,14 @@ class NoExceptionUtilsTest {
     @Test
     void testSafeErrorLog() {
         final Logger logger = mock(Logger.class);
+        assertDoesNotThrow(() -> NoExceptionUtils.WARN(logger, "foo", new IllegalArgumentException()));
         doThrow(new IllegalStateException()).when(logger).error(any(String.class), any(Throwable.class));
         assertDoesNotThrow(() -> NoExceptionUtils.ERROR(logger, "foo", new IllegalArgumentException()));
     }
 
     @Test
     void testSafeSleep() throws InterruptedException {
-
+        assertDoesNotThrow(() -> NoExceptionUtils.SLEEP(0));
         final CountDownLatch startLatch = new CountDownLatch(1);
         final AtomicReference<Throwable> err = new AtomicReference<>();
         final Thread t = new Thread(() -> {

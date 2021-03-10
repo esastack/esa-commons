@@ -46,6 +46,12 @@ class SecurityUtilsTest {
     }
 
     @Test
+    void testHmacSHA1() {
+        assertEquals("d373670db3c99ebfa96060e993c340ccf6dd079e",
+                SecurityUtils.getHmacSHA1("hello".getBytes(), "abc"));
+    }
+
+    @Test
     void testECSDA() {
         final SecurityUtils.ECDSA.ECDSAKey key = SecurityUtils.ECDSA.genKey(256);
         assertNotNull(key);

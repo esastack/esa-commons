@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,6 +46,7 @@ class ObjectUtilsTest {
 
     @Test
     void testInstantiate() {
+        assertThrows(IllegalArgumentException.class, () -> ObjectUtils.instantiateBeanIfNecessary(Function.class));
         assertNotNull(ObjectUtils.instantiateBeanIfNecessary(Object.class));
         final Object o = new Object();
         assertEquals(o, ObjectUtils.instantiateBeanIfNecessary(o));
@@ -54,6 +56,16 @@ class ObjectUtilsTest {
     @Test
     void testInstantiateFromNoneConstructor() {
         assertThrows(Exception.class, () -> ObjectUtils.instantiateBeanIfNecessary(int.class));
+    }
+
+    @Test
+    void testInstantiateFromNonPublicConstructor() {
+        assertThrows(IllegalArgumentException.class, () -> ObjectUtils.instantiateBeanIfNecessary(A.class));
+    }
+
+    @Test
+    void testInstantiateError() {
+        assertThrows(IllegalArgumentException.class, () -> ObjectUtils.instantiateBeanIfNecessary(B.class));
     }
 
     @Test
@@ -80,6 +92,7 @@ class ObjectUtilsTest {
         assertFalse(ObjectUtils.safeEquals(null, o2));
         assertFalse(ObjectUtils.safeEquals(o1, o2));
         assertTrue(ObjectUtils.safeEquals("foo", "foo"));
+        assertTrue(ObjectUtils.safeEquals(new String("foo"), new String("foo")));
 
         assertFalse(ObjectUtils.safeEquals(new Object[]{o1}, o2));
         assertFalse(ObjectUtils.safeEquals(o1, new Object[]{o2}));
@@ -93,6 +106,9 @@ class ObjectUtilsTest {
 
         assertTrue(ObjectUtils.safeEquals(new char[]{0, 1}, new char[]{0, 1}));
         assertFalse(ObjectUtils.safeEquals(new char[]{0, 1}, new char[]{1, 0}));
+
+        assertTrue(ObjectUtils.safeEquals(new short[]{0, 1}, new short[]{0, 1}));
+        assertFalse(ObjectUtils.safeEquals(new short[]{0, 1}, new short[]{1, 0}));
 
         assertTrue(ObjectUtils.safeEquals(new double[]{0.0D, 1.0D}, new double[]{0.0D, 1.0D}));
         assertFalse(ObjectUtils.safeEquals(new double[]{0.0D, 1.0D}, new double[]{1.0D, 0.0D}));
@@ -108,6 +124,17 @@ class ObjectUtilsTest {
 
         assertTrue(ObjectUtils.safeEquals(new char[]{0, 1}, new char[]{0, 1}));
         assertFalse(ObjectUtils.safeEquals(new char[]{0, 1}, new char[]{1, 0}));
+    }
+
+    private static class A {
+        private A() {
+        }
+    }
+
+    private static class B {
+        public B() {
+            throw new RuntimeException();
+        }
     }
 
 }
