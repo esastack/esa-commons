@@ -33,9 +33,16 @@ class ChecksTest {
         final Object o = new Object();
         assertSame(o, Checks.checkNotNull(o));
         assertThrows(NullPointerException.class, () -> Checks.checkNotNull(null));
+
+        assertSame(o, Checks.checkNotNull(o, "foo"));
         assertEquals("o",
                 assertThrows(NullPointerException.class,
                         () -> Checks.checkNotNull(null, "o")).getMessage());
+        assertEquals("",
+                assertThrows(NullPointerException.class,
+                        () -> Checks.checkNotNull(null, null)).getMessage());
+
+        assertSame(o, Checks.checkNotNull(o, "foo %s", "bar"));
         assertEquals("foo bar",
                 assertThrows(NullPointerException.class,
                         () -> Checks.checkNotNull(null, "foo %s", "bar")).getMessage());
@@ -44,8 +51,8 @@ class ChecksTest {
     @Test
     void testCheckArg() {
         Checks.checkArg(true);
-        Checks.checkState(true, "o");
-        Checks.checkState(true, "foo %s", "bar");
+        Checks.checkArg(true, "o");
+        Checks.checkArg(true, "foo %s", "bar");
         assertThrows(IllegalArgumentException.class, () -> Checks.checkArg(false));
         assertEquals("o",
                 assertThrows(IllegalArgumentException.class,
@@ -88,10 +95,18 @@ class ChecksTest {
         Checks.checkNotEmptyArg(list);
         Checks.checkNotEmptyArg(list, "list");
         Checks.checkNotEmptyArg(list, "foo %s", "bar");
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((List<String>) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(Collections.emptyList()));
         assertEquals("list",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((List<String>) null, "list")).getMessage());
+        assertEquals("list",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(Collections.emptyList(), "list")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((List<String>) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(Collections.emptyList(), "foo %s", "bar"))
@@ -101,10 +116,19 @@ class ChecksTest {
         assertSame(refArr, Checks.checkNotEmptyArg(refArr));
         assertSame(refArr, Checks.checkNotEmptyArg(refArr, "str"));
         assertSame(refArr, Checks.checkNotEmptyArg(refArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((String[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new String[0]));
+
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((String[]) null, "arr")).getMessage());
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new String[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((String[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new String[0], "foo %s", "bar"))
@@ -114,10 +138,18 @@ class ChecksTest {
         assertSame(longArr, Checks.checkNotEmptyArg(longArr));
         assertSame(longArr, Checks.checkNotEmptyArg(longArr, "arr"));
         assertSame(longArr, Checks.checkNotEmptyArg(longArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((long[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new long[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((long[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new long[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((long[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new long[0], "foo %s", "bar"))
@@ -127,10 +159,18 @@ class ChecksTest {
         assertSame(doubleArr, Checks.checkNotEmptyArg(doubleArr));
         assertSame(doubleArr, Checks.checkNotEmptyArg(doubleArr, "arr"));
         assertSame(doubleArr, Checks.checkNotEmptyArg(doubleArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((double[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new double[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((double[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new double[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((double[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new double[0], "foo %s", "bar"))
@@ -140,10 +180,18 @@ class ChecksTest {
         assertSame(intArr, Checks.checkNotEmptyArg(intArr));
         assertSame(intArr, Checks.checkNotEmptyArg(intArr, "arr"));
         assertSame(intArr, Checks.checkNotEmptyArg(intArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((int[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new int[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((int[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new int[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((int[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new int[0], "foo %s", "bar"))
@@ -153,10 +201,18 @@ class ChecksTest {
         assertSame(floatArr, Checks.checkNotEmptyArg(floatArr));
         assertSame(floatArr, Checks.checkNotEmptyArg(floatArr, "arr"));
         assertSame(floatArr, Checks.checkNotEmptyArg(floatArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((float[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new float[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((float[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new float[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((float[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new float[0], "foo %s", "bar"))
@@ -166,10 +222,18 @@ class ChecksTest {
         assertSame(booleanArr, Checks.checkNotEmptyArg(booleanArr));
         assertSame(booleanArr, Checks.checkNotEmptyArg(booleanArr, "arr"));
         assertSame(booleanArr, Checks.checkNotEmptyArg(booleanArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((boolean[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new boolean[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((boolean[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new boolean[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((boolean[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new boolean[0], "foo %s", "bar"))
@@ -179,10 +243,18 @@ class ChecksTest {
         assertSame(shortArr, Checks.checkNotEmptyArg(shortArr));
         assertSame(shortArr, Checks.checkNotEmptyArg(shortArr, "arr"));
         assertSame(shortArr, Checks.checkNotEmptyArg(shortArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((short[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new short[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((short[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new short[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((short[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new short[0], "foo %s", "bar"))
@@ -192,10 +264,18 @@ class ChecksTest {
         assertSame(charArr, Checks.checkNotEmptyArg(charArr));
         assertSame(charArr, Checks.checkNotEmptyArg(charArr, "arr"));
         assertSame(charArr, Checks.checkNotEmptyArg(charArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((char[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new char[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((char[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new char[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((char[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new char[0], "foo %s", "bar"))
@@ -205,10 +285,18 @@ class ChecksTest {
         assertSame(byteArr, Checks.checkNotEmptyArg(byteArr));
         assertSame(byteArr, Checks.checkNotEmptyArg(byteArr, "arr"));
         assertSame(byteArr, Checks.checkNotEmptyArg(byteArr, "foo %s", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((byte[]) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(new byte[0]));
         assertEquals("arr",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((byte[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new byte[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((byte[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(new byte[0], "foo %s", "bar"))
@@ -218,10 +306,18 @@ class ChecksTest {
         Checks.checkNotEmptyArg(map);
         Checks.checkNotEmptyArg(map, "map");
         Checks.checkNotEmptyArg(map, "foo %s", "bar");
+        assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg((Map<String, String>) null));
         assertThrows(IllegalArgumentException.class, () -> Checks.checkNotEmptyArg(Collections.emptyMap()));
         assertEquals("map",
                 assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((Map<String, String>) null, "map")).getMessage());
+        assertEquals("map",
+                assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(Collections.emptyMap(), "map")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalArgumentException.class,
+                        () -> Checks.checkNotEmptyArg((Map<String, String>) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalArgumentException.class,
                         () -> Checks.checkNotEmptyArg(Collections.emptyMap(), "foo %s", "bar"))
@@ -247,10 +343,18 @@ class ChecksTest {
         Checks.checkNotEmptyState(list);
         Checks.checkNotEmptyState(list, "list");
         Checks.checkNotEmptyState(list, "foo %s", "bar");
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((List<String>) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(Collections.emptyList()));
         assertEquals("list",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((List<String>) null, "list")).getMessage());
+        assertEquals("list",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(Collections.emptyList(), "list")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((List<String>) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(Collections.emptyList(), "foo %s", "bar"))
@@ -260,10 +364,18 @@ class ChecksTest {
         assertSame(refArr, Checks.checkNotEmptyState(refArr));
         assertSame(refArr, Checks.checkNotEmptyState(refArr, "str"));
         assertSame(refArr, Checks.checkNotEmptyState(refArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((String[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new String[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((String[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new String[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((String[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new String[0], "foo %s", "bar"))
@@ -273,10 +385,18 @@ class ChecksTest {
         assertSame(longArr, Checks.checkNotEmptyState(longArr));
         assertSame(longArr, Checks.checkNotEmptyState(longArr, "arr"));
         assertSame(longArr, Checks.checkNotEmptyState(longArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((long[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new long[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((long[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new long[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((long[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new long[0], "foo %s", "bar"))
@@ -286,10 +406,18 @@ class ChecksTest {
         assertSame(doubleArr, Checks.checkNotEmptyState(doubleArr));
         assertSame(doubleArr, Checks.checkNotEmptyState(doubleArr, "arr"));
         assertSame(doubleArr, Checks.checkNotEmptyState(doubleArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((double[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new double[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((double[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new double[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((double[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new double[0], "foo %s", "bar"))
@@ -299,10 +427,18 @@ class ChecksTest {
         assertSame(intArr, Checks.checkNotEmptyState(intArr));
         assertSame(intArr, Checks.checkNotEmptyState(intArr, "arr"));
         assertSame(intArr, Checks.checkNotEmptyState(intArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((int[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new int[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((int[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new int[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((int[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new int[0], "foo %s", "bar"))
@@ -312,10 +448,18 @@ class ChecksTest {
         assertSame(floatArr, Checks.checkNotEmptyState(floatArr));
         assertSame(floatArr, Checks.checkNotEmptyState(floatArr, "arr"));
         assertSame(floatArr, Checks.checkNotEmptyState(floatArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((float[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new float[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((float[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new float[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((float[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new float[0], "foo %s", "bar"))
@@ -325,10 +469,18 @@ class ChecksTest {
         assertSame(booleanArr, Checks.checkNotEmptyState(booleanArr));
         assertSame(booleanArr, Checks.checkNotEmptyState(booleanArr, "arr"));
         assertSame(booleanArr, Checks.checkNotEmptyState(booleanArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((boolean[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new boolean[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((boolean[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new boolean[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((boolean[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new boolean[0], "foo %s", "bar"))
@@ -338,10 +490,18 @@ class ChecksTest {
         assertSame(shortArr, Checks.checkNotEmptyState(shortArr));
         assertSame(shortArr, Checks.checkNotEmptyState(shortArr, "arr"));
         assertSame(shortArr, Checks.checkNotEmptyState(shortArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((short[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new short[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((short[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new short[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((short[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new short[0], "foo %s", "bar"))
@@ -351,10 +511,18 @@ class ChecksTest {
         assertSame(charArr, Checks.checkNotEmptyState(charArr));
         assertSame(charArr, Checks.checkNotEmptyState(charArr, "arr"));
         assertSame(charArr, Checks.checkNotEmptyState(charArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((char[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new char[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((char[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new char[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((char[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new char[0], "foo %s", "bar"))
@@ -364,10 +532,18 @@ class ChecksTest {
         assertSame(byteArr, Checks.checkNotEmptyState(byteArr));
         assertSame(byteArr, Checks.checkNotEmptyState(byteArr, "arr"));
         assertSame(byteArr, Checks.checkNotEmptyState(byteArr, "foo %s", "bar"));
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((byte[]) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(new byte[0]));
         assertEquals("arr",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((byte[]) null, "arr")).getMessage());
+        assertEquals("arr",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new byte[0], "arr")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((byte[]) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(new byte[0], "foo %s", "bar"))
@@ -377,10 +553,18 @@ class ChecksTest {
         Checks.checkNotEmptyState(map);
         Checks.checkNotEmptyState(map, "map");
         Checks.checkNotEmptyState(map, "foo %s", "bar");
+        assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState((Map<String, String>) null));
         assertThrows(IllegalStateException.class, () -> Checks.checkNotEmptyState(Collections.emptyMap()));
         assertEquals("map",
                 assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((Map<String, String>) null, "map")).getMessage());
+        assertEquals("map",
+                assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(Collections.emptyMap(), "map")).getMessage());
+        assertEquals("foo bar",
+                assertThrows(IllegalStateException.class,
+                        () -> Checks.checkNotEmptyState((Map<String, String>) null, "foo %s", "bar"))
+                        .getMessage());
         assertEquals("foo bar",
                 assertThrows(IllegalStateException.class,
                         () -> Checks.checkNotEmptyState(Collections.emptyMap(), "foo %s", "bar"))

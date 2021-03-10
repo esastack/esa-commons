@@ -25,7 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MimeTypeTest {
 
@@ -50,6 +56,14 @@ class MimeTypeTest {
         assertTrue(MimeType.of(MimeType.WILDCARD_TYPE).isWildcardType());
         assertTrue(MimeType.of(MimeType.WILDCARD_TYPE).isWildcardSubtype());
         assertTrue(MimeType.of("application", "*+xml").isWildcardSubtype());
+        assertEquals("application/json;a=1",
+                new MimeType("application", "json", Collections.singletonMap("a", "1")).toString());
+    }
+
+    @Test
+    void testCheckToken() {
+        assertThrows(IllegalArgumentException.class, () -> new MimeType("???", "json"));
+        assertDoesNotThrow(() -> new MimeType("???", "json", Collections.emptyMap(), false));
     }
 
     @Test
@@ -178,6 +192,16 @@ class MimeTypeTest {
 
     @Test
     void testParseMimeType() {
+        assertThrows(IllegalArgumentException.class, () -> MimeType.parseMimeType(null));
+        assertThrows(IllegalArgumentException.class, () -> MimeType.parseMimeType(""));
+        assertThrows(IllegalArgumentException.class, () -> MimeType.parseMimeType("  "));
+        assertThrows(IllegalArgumentException.class, () -> MimeType.parseMimeType("abc"));
+        assertThrows(IllegalArgumentException.class, () -> MimeType.parseMimeType("abc/"));
+
+        final MimeType wildcard = MimeType.parseMimeType("*");
+        assertTrue(wildcard.isWildcardType());
+        assertTrue(wildcard.isWildcardSubtype());
+
         final String type = "text";
         final String subtype = "plain";
 
@@ -215,7 +239,7 @@ class MimeTypeTest {
     void testParseMimeTypeWithParameters() {
         final String type = "text";
         final String subtype = "plain";
-        final String parameter = "; a=1 ; b= 2";
+        final String parameter = "; a=1 ; b= \"2\"";
 
         final MimeType parsed = MimeType.parseMimeType(type + "/" + subtype + parameter);
         assertEquals(type.trim(), parsed.type());
@@ -227,13 +251,18 @@ class MimeTypeTest {
 
     @Test
     void testParseMimeTypes() {
+
+        assertTrue(MimeType.parseMimeTypes("").isEmpty());
+
         final List<MimeType> mimeTypes =
-                MimeType.parseMimeTypes("application/json;a=1, text/plain;charset=utf-8,application/*+xml, */*");
+                MimeType.parseMimeTypes("application/json;a=1;b=\"2\", text/plain;charset=utf-8,application/*+xml, " +
+                        "*/*");
         assertEquals(4, mimeTypes.size());
         MimeType type = mimeTypes.get(0);
         assertEquals("application", type.type());
         assertEquals("json", type.subtype());
         assertEquals("1", type.getParameter("a"));
+        assertEquals("2", type.getParameter("b"));
 
         type = mimeTypes.get(1);
         assertEquals("text", type.type());
@@ -346,6 +375,9 @@ class MimeTypeTest {
 
         assertFalse(MimeType.of("application", "*+html")
                 .isCompatibleWith(MimeType.of("application", "soap+xml")));
+
+        assertFalse(MimeType.of("application", "json")
+                .isCompatibleWith(MimeType.of("text", "plain")));
     }
 
     @Test
