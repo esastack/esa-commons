@@ -51,7 +51,7 @@ public final class SimpleHttpUtils {
 
         int size = urlsCopy.size();
         if (size == 0) {
-            throw new IOException("no aliviable server.");
+            throw new IOException("no available server.");
         }
 
         int index = ThreadLocalRandom.current().nextInt(size);
