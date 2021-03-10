@@ -19,8 +19,6 @@ import esa.commons.Checks;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Map;
 
 import static esa.commons.reflect.ReflectionUtils.makeFieldAccessible;
@@ -80,31 +78,6 @@ public final class BeanUtils {
         }
         throw new IllegalArgumentException("Could not find field '" + fieldName +
                 "' in '" + object.getClass().getName() + "'");
-    }
-
-    /**
-     * @deprecated use {@link esa.commons.ClassUtils#findFirstGenericType(Class, Class)}
-     */
-    @Deprecated
-    public static Class getSuperClassGenericType(Class clazz) {
-        return getSuperClassGenericType(clazz, 0);
-    }
-
-    /**
-     * @deprecated use {@link esa.commons.ClassUtils#findFirstGenericType(Class, Class)}
-     */
-    @Deprecated
-    public static Class getSuperClassGenericType(Class clazz, int index) {
-        Checks.checkArg(index >= 0, "index must be positive or zero: " + index);
-        Type type = clazz.getGenericSuperclass();
-
-        if (type instanceof ParameterizedType) {
-            Type[] params = ((ParameterizedType) type).getActualTypeArguments();
-            if (params != null && params.length > 0 && index < params.length && params[index] instanceof Class) {
-                return (Class) params[index];
-            }
-        }
-        return Object.class;
     }
 
     private BeanUtils() {

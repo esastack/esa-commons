@@ -35,14 +35,6 @@ public final class ESABeanUtils {
         BeanUtils.setFieldValue(object, fieldName, value);
     }
 
-    public static Class getSuperClassGenericType(Class clazz) {
-        return BeanUtils.getSuperClassGenericType(clazz);
-    }
-
-    public static Class getSuperClassGenericType(Class clazz, int index) {
-        return BeanUtils.getSuperClassGenericType(clazz, index);
-    }
-
     private ESABeanUtils() {
     }
 }
