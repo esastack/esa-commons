@@ -108,8 +108,11 @@ class StringUtilsTest {
         assertEquals("", StringUtils.concat(""));
         assertEquals("foo", StringUtils.concat("foo"));
         assertEquals("foobar", StringUtils.concat("foo", "bar"));
+        assertEquals("foobar", StringUtils.concat("foo", null, "bar"));
         assertEquals("foobarbaz", StringUtils.concat("foo", "bar", "baz"));
         assertEquals("foo,bar,baz", StringUtils.concat("foo", ",", "bar", ",", "baz"));
+        assertEquals("foo,bar,baz", StringUtils.concat("foo", ",", null,
+                "bar", ",", null, "baz", null));
     }
 
 }
