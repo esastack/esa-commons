@@ -25,7 +25,7 @@ ESA Commons is the common lib of `ESA Stack`.
 <dependency>
     <groupId>io.esastack</groupId>
     <artifactId>commons</artifactId>
-    <version>${esa-httpserver.version}</version>
+    <version>${mvn.version}</version>
 </dependency>
 ```
 
