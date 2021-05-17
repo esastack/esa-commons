@@ -202,12 +202,17 @@ public final class StringUtils {
             return EMPTY_STRING;
         }
         if (params.length < 5) {
-            String ret = params[0];
-            for (int i = 1; i < params.length; i++) {
-                if (params[i] != null) {
-                    ret += params[i];
+            String ret = null;
+            for (String s : params) {
+                if (s != null) {
+                    if (ret == null) {
+                        ret = s;
+                    } else {
+                        ret += s;
+                    }
                 }
             }
+
             return ret;
         }
         int len = 0;
