@@ -17,6 +17,7 @@ package esa.commons.spi.extensionloader;
 
 
 import esa.commons.spi.SpiLoader;
+import esa.commons.spi.extensionloader.continueiferr.TestContinueIfErrSpi;
 import esa.commons.spi.extensionloader.emptyparams.Impl1;
 import esa.commons.spi.extensionloader.emptyparams.Impl2;
 import esa.commons.spi.extensionloader.emptyparams.Impl3;
@@ -28,8 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AllTypeGetExtensionFunctionTest {
 
@@ -176,5 +176,75 @@ class AllTypeGetExtensionFunctionTest {
 
         list = SpiLoader.getAll(TestEmptySpi.class);
         assertEquals(4, list.size());
+    }
+
+    @Test
+    public void continueIfErrTest() {
+        final SpiLoader<TestContinueIfErrSpi> loader = SpiLoader.cached(TestContinueIfErrSpi.class);
+        final Map<String, String> tags = new HashMap<>();
+        tags.put("k1", "v1");
+        tags.put("k2", "v2");
+
+        List<TestContinueIfErrSpi> list = null;
+
+        try {
+            list = loader.getAll();
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNull(list);
+
+        try {
+            list = loader.getAll(true);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNotNull(list);
+        assertEquals(2, list.size());
+
+        try {
+            list = loader.getByGroup("TEST");
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNull(list);
+
+        try {
+            list = loader.getByGroup("TEST", false, true);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNotNull(list);
+        assertEquals(2, list.size());
+
+        try {
+            list = loader.getByTags(tags);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNull(list);
+
+        try {
+            list = loader.getByTags(tags, false, true);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNotNull(list);
+        assertEquals(2, list.size());
+
+        try {
+            list = loader.getByFeature("TEST", tags);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNull(list);
+
+        try {
+            list = loader.getByFeature("TEST", tags, true);
+        } catch (Exception e) {
+            list = null;
+        }
+        assertNotNull(list);
+        assertEquals(2, list.size());
     }
 }

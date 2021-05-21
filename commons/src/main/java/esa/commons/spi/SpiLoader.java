@@ -112,7 +112,31 @@ public class SpiLoader<T> {
      * @see #getAll()
      */
     public static <T> List<T> getAll(Class<T> type) {
-        return cached(type).getAll();
+        return getAll(type, false);
+    }
+
+    /**
+     * Static method to get all the extensions by class type.
+     *
+     * @see #getAll()
+     */
+    public static <T> List<T> getAll(Class<T> type, boolean continueIfErr) {
+        return cached(type).getAll(continueIfErr);
+    }
+
+    /**
+     * Get all extensions of SPI, if fail to load an specific extension, then abort and throw the exception.
+     */
+    public List<T> getAll() {
+        return getAll(false);
+    }
+
+    /**
+     * @param continueIfErr whether continue to load other extensions if fail to load an specific extension.
+     * Get all extensions of SPI.
+     */
+    public List<T> getAll(boolean continueIfErr) {
+        return getByFeature(null, true, null, true, continueIfErr);
     }
 
     /**
@@ -152,9 +176,22 @@ public class SpiLoader<T> {
      * <p>Only match with the "groups" of @{@link Feature}.</p>
      *
      * @param group expected group name of extension, match with the "groups" of @{@link Feature}
+     * @see #getByGroup(String, boolean, boolean)
      */
     public List<T> getByGroup(String group) {
-        return getByGroup(group, false);
+        return getByGroup(group, false, false);
+    }
+
+    /**
+     * <p>Get expected featured extensions.</p>
+     * <p>Only match with the "groups" of @{@link Feature}.</p>
+     *
+     * @param group expected group name of extension, match with the "groups" of @{@link Feature}
+     * @param matchIfMissing whether return all the extensions if group mismatch.
+     * @see #getByGroup(String, boolean, boolean)
+     */
+    public List<T> getByGroup(String group, boolean matchIfMissing) {
+        return getByGroup(group, matchIfMissing, false);
     }
 
     /**
@@ -169,9 +206,10 @@ public class SpiLoader<T> {
      *                       <li>the extensions match with "group" and "tags"</li>
      *                       <li>the extensions whose @{@link Feature} "groups" is not configured</li>
      *                       </ul>
+     * @param continueIfErr  whether continue if fail to load one of the extensions.
      */
-    public List<T> getByGroup(String group, boolean matchIfMissing) {
-        return getByFeature(group, matchIfMissing, null, false);
+    public List<T> getByGroup(String group, boolean matchIfMissing, boolean continueIfErr) {
+        return getByFeature(group, matchIfMissing, null, false, continueIfErr);
     }
 
     /**
@@ -179,9 +217,22 @@ public class SpiLoader<T> {
      * <p>Exactly match the parameters with @{@link Feature} annotation's fields.</p>
      *
      * @param tags expected key-values of extension, match with the "tags" of @{@link Feature}
+     * @see #getByTags(Map, boolean, boolean)
      */
     public List<T> getByTags(Map<String, String> tags) {
-        return getByTags(tags, false);
+        return getByTags(tags, false, false);
+    }
+
+    /**
+     * <p>Get expected featured extensions.</p>
+     * <p>Exactly match the parameters with @{@link Feature} annotation's fields.</p>
+     *
+     * @param tags expected key-values of extension, match with the "tags" of @{@link Feature}
+     * @param matchIfMissing whether return all the extensions if tags mismatch.
+     * @see #getByTags(Map, boolean, boolean)
+     */
+    public List<T> getByTags(Map<String, String> tags, boolean matchIfMissing) {
+        return getByTags(tags, matchIfMissing, false);
     }
 
     /**
@@ -196,9 +247,20 @@ public class SpiLoader<T> {
      *                       <li>the extensions match with "group" and "tags"</li>
      *                       <li>the extensions whose @{@link Feature} "tags" is not configured</li>
      *                       </ul>
+     * @param continueIfErr whether continue if fail to load one of the extensions.
      */
-    public List<T> getByTags(Map<String, String> tags, boolean matchIfMissing) {
-        return getByFeature(null, false, tags, matchIfMissing);
+    public List<T> getByTags(Map<String, String> tags, boolean matchIfMissing, boolean continueIfErr) {
+        return getByFeature(null, false, tags, matchIfMissing, continueIfErr);
+    }
+
+    /**
+     * <p>Get expected featured extensions, if fail to load an specific extension,
+     * then abort and throw the exception. </p>
+     *
+     * @see #getByFeature(String, Map, boolean)
+     */
+    public List<T> getByFeature(String group, Map<String, String> tags) {
+        return getByFeature(group, tags, false);
     }
 
     /**
@@ -207,16 +269,23 @@ public class SpiLoader<T> {
      *
      * @param group expected group name of extension, match with the "groups" of @{@link Feature}
      * @param tags  expected key-values of extension, match with the "tags" of @{@link Feature}
+     * @param continueIfErr whether continue if fail to load one of the extensions.
      */
-    public List<T> getByFeature(String group, Map<String, String> tags) {
-        return getByFeature(group, false, tags, false);
+    public List<T> getByFeature(String group, Map<String, String> tags, boolean continueIfErr) {
+        return getByFeature(group, false, tags, false, continueIfErr);
     }
 
     /**
-     * Get all extensions of SPI.
+     * <p>Get expected featured extensions.</p>
+     * <p>whether return the extensions whose group of tags mismatch.</p>
+     *
+     * @see #getByFeature(String, boolean, Map, boolean, boolean)
      */
-    public List<T> getAll() {
-        return getByFeature(null, true, null, true);
+    public List<T> getByFeature(String group,
+                                boolean matchGroupIfMissing,
+                                Map<String, String> tags,
+                                boolean matchTagIfMissing) {
+        return getByFeature(group, matchGroupIfMissing, tags, matchTagIfMissing, false);
     }
 
     /**
@@ -236,12 +305,27 @@ public class SpiLoader<T> {
      *                            <li>the extensions whose "tags" of @{@link Feature} is not configured, if
      *                            "matchTagIfMissing" is TRUE</li>
      *                            </ul>
+     * @param continueIfErr       whether continue if fail to load one of the extensions.
      */
     public List<T> getByFeature(String group,
                                 boolean matchGroupIfMissing,
                                 Map<String, String> tags,
+                                boolean matchTagIfMissing,
+                                boolean continueIfErr) {
+        return getByFeature(null, group, matchGroupIfMissing, tags, matchTagIfMissing, continueIfErr);
+    }
+
+    /**
+     * <p>Get expected featured extensions.</p>
+     *
+     * @see #getByFeature(Collection, String, boolean, Map, boolean, boolean)
+     */
+    public List<T> getByFeature(Collection<String> forceIncludeNames,
+                                String group,
+                                boolean matchGroupIfMissing,
+                                Map<String, String> tags,
                                 boolean matchTagIfMissing) {
-        return getByFeature(null, group, matchGroupIfMissing, tags, matchTagIfMissing);
+        return getByFeature(forceIncludeNames, group, matchGroupIfMissing, tags, matchTagIfMissing, false);
     }
 
     /**
@@ -262,12 +346,14 @@ public class SpiLoader<T> {
      *                            <li>the extensions whose "tags" of @{@link Feature} is not configured, if
      *                            "matchTagIfMissing" is TRUE</li>
      *                            </ul>
+     * @param continueIfErr       whether continue if fail to load one of the extensions.
      */
     public List<T> getByFeature(Collection<String> forceIncludeNames,
                                 String group,
                                 boolean matchGroupIfMissing,
                                 Map<String, String> tags,
-                                boolean matchTagIfMissing) {
+                                boolean matchTagIfMissing,
+                                boolean continueIfErr) {
         List<T> featuredExtensions = new LinkedList<>();
         for (FeatureInfo featureInfo : featuresCache) {
             if (!isMatchGroup(featureInfo.groups, group, matchGroupIfMissing)) {
@@ -275,7 +361,15 @@ public class SpiLoader<T> {
             }
             if (isExpectName(featureInfo.name, forceIncludeNames) ||
                     isMatchTags(featureInfo.tagsMap, featureInfo.excludeTagsMap, tags, matchTagIfMissing)) {
-                getByName(featureInfo.name).ifPresent(featuredExtensions::add);
+                try {
+                    getByName(featureInfo.name).ifPresent(featuredExtensions::add);
+                } catch (Throwable e) {
+                    if (continueIfErr) {
+                        LOGGER.error("Failed to get instance of {}, named {}", type.getTypeName(), featureInfo.name, e);
+                    } else {
+                        throw e;
+                    }
+                }
             }
         }
         return featuredExtensions;
