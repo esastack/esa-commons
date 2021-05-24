@@ -179,72 +179,22 @@ class AllTypeGetExtensionFunctionTest {
     }
 
     @Test
-    public void continueIfErrTest() {
+    void continueIfErrTest() {
         final SpiLoader<TestContinueIfErrSpi> loader = SpiLoader.cached(TestContinueIfErrSpi.class);
         final Map<String, String> tags = new HashMap<>();
         tags.put("k1", "v1");
         tags.put("k2", "v2");
 
-        List<TestContinueIfErrSpi> list = null;
+        assertThrows(Exception.class, loader::getAll);
+        assertEquals(2, loader.getAll(true).size());
 
-        try {
-            list = loader.getAll();
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNull(list);
+        assertThrows(Exception.class, () -> loader.getByGroup("TEST"));
+        assertEquals(2, loader.getByGroup("TEST", false, true).size());
 
-        try {
-            list = loader.getAll(true);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNotNull(list);
-        assertEquals(2, list.size());
+        assertThrows(Exception.class, () -> loader.getByTags(tags));
+        assertEquals(2, loader.getByTags(tags, false, true).size());
 
-        try {
-            list = loader.getByGroup("TEST");
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNull(list);
-
-        try {
-            list = loader.getByGroup("TEST", false, true);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNotNull(list);
-        assertEquals(2, list.size());
-
-        try {
-            list = loader.getByTags(tags);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNull(list);
-
-        try {
-            list = loader.getByTags(tags, false, true);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNotNull(list);
-        assertEquals(2, list.size());
-
-        try {
-            list = loader.getByFeature("TEST", tags);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNull(list);
-
-        try {
-            list = loader.getByFeature("TEST", tags, true);
-        } catch (Exception e) {
-            list = null;
-        }
-        assertNotNull(list);
-        assertEquals(2, list.size());
+        assertThrows(Exception.class, () -> loader.getByFeature("TEST", tags));
+        assertEquals(2, loader.getByFeature("TEST", tags, true).size());
     }
 }
