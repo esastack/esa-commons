@@ -17,6 +17,7 @@ package esa.commons.spi.extensionloader;
 
 
 import esa.commons.spi.SpiLoader;
+import esa.commons.spi.extensionloader.continueiferr.TestContinueIfErrSpi;
 import esa.commons.spi.extensionloader.emptyparams.Impl1;
 import esa.commons.spi.extensionloader.emptyparams.Impl2;
 import esa.commons.spi.extensionloader.emptyparams.Impl3;
@@ -28,8 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AllTypeGetExtensionFunctionTest {
 
@@ -176,5 +176,25 @@ class AllTypeGetExtensionFunctionTest {
 
         list = SpiLoader.getAll(TestEmptySpi.class);
         assertEquals(4, list.size());
+    }
+
+    @Test
+    void continueIfErrTest() {
+        final SpiLoader<TestContinueIfErrSpi> loader = SpiLoader.cached(TestContinueIfErrSpi.class);
+        final Map<String, String> tags = new HashMap<>();
+        tags.put("k1", "v1");
+        tags.put("k2", "v2");
+
+        assertThrows(Exception.class, loader::getAll);
+        assertEquals(2, loader.getAll(true).size());
+
+        assertThrows(Exception.class, () -> loader.getByGroup("TEST"));
+        assertEquals(2, loader.getByGroup("TEST", false, true).size());
+
+        assertThrows(Exception.class, () -> loader.getByTags(tags));
+        assertEquals(2, loader.getByTags(tags, false, true).size());
+
+        assertThrows(Exception.class, () -> loader.getByFeature("TEST", tags));
+        assertEquals(2, loader.getByFeature("TEST", tags, true).size());
     }
 }
