@@ -17,8 +17,6 @@ package esa.commons.spi.extensionloader;
 
 
 import esa.commons.spi.SpiLoader;
-import esa.commons.spi.extensionloader.duplicate.TestDuplicateSpi;
-import esa.commons.spi.extensionloader.duplicate.TestDuplicateSpi2;
 import esa.commons.spi.extensionloader.noparam.NoDefaultSpi;
 import esa.commons.spi.extensionloader.noparam.WrongDefaultSpi;
 import esa.commons.spi.extensionloader.wrapper.NormalInterface;
@@ -29,7 +27,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>

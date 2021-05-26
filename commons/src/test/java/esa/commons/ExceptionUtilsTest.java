@@ -18,7 +18,9 @@ package esa.commons;
 import org.junit.jupiter.api.Test;
 
 import static esa.commons.ExceptionUtils.asRuntime;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ExceptionUtilsTest {
 
