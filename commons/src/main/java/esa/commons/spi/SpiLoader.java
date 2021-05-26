@@ -11,7 +11,16 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * difference between these folders except the name.
  *
  * @param <T> type of target instance.
- *
  * @see SPI
  * @see Feature
  */
@@ -133,7 +141,7 @@ public class SpiLoader<T> {
 
     /**
      * @param continueIfErr whether continue to load other extensions if fail to load an specific extension.
-     * Get all extensions of SPI.
+     *                      Get all extensions of SPI.
      */
     public List<T> getAll(boolean continueIfErr) {
         return getByFeature(null, true, null, true, continueIfErr);
@@ -186,7 +194,7 @@ public class SpiLoader<T> {
      * <p>Get expected featured extensions.</p>
      * <p>Only match with the "groups" of @{@link Feature}.</p>
      *
-     * @param group expected group name of extension, match with the "groups" of @{@link Feature}
+     * @param group          expected group name of extension, match with the "groups" of @{@link Feature}
      * @param matchIfMissing whether return all the extensions if group mismatch.
      * @see #getByGroup(String, boolean, boolean)
      */
@@ -227,7 +235,7 @@ public class SpiLoader<T> {
      * <p>Get expected featured extensions.</p>
      * <p>Exactly match the parameters with @{@link Feature} annotation's fields.</p>
      *
-     * @param tags expected key-values of extension, match with the "tags" of @{@link Feature}
+     * @param tags           expected key-values of extension, match with the "tags" of @{@link Feature}
      * @param matchIfMissing whether return all the extensions if tags mismatch.
      * @see #getByTags(Map, boolean, boolean)
      */
@@ -247,7 +255,7 @@ public class SpiLoader<T> {
      *                       <li>the extensions match with "group" and "tags"</li>
      *                       <li>the extensions whose @{@link Feature} "tags" is not configured</li>
      *                       </ul>
-     * @param continueIfErr whether continue if fail to load one of the extensions.
+     * @param continueIfErr  whether continue if fail to load one of the extensions.
      */
     public List<T> getByTags(Map<String, String> tags, boolean matchIfMissing, boolean continueIfErr) {
         return getByFeature(null, false, tags, matchIfMissing, continueIfErr);
@@ -267,8 +275,8 @@ public class SpiLoader<T> {
      * <p>Get expected featured extensions.</p>
      * <p>Exactly match the parameters with @{@link Feature} annotation's fields.</p>
      *
-     * @param group expected group name of extension, match with the "groups" of @{@link Feature}
-     * @param tags  expected key-values of extension, match with the "tags" of @{@link Feature}
+     * @param group         expected group name of extension, match with the "groups" of @{@link Feature}
+     * @param tags          expected key-values of extension, match with the "tags" of @{@link Feature}
      * @param continueIfErr whether continue if fail to load one of the extensions.
      */
     public List<T> getByFeature(String group, Map<String, String> tags, boolean continueIfErr) {
@@ -381,7 +389,6 @@ public class SpiLoader<T> {
      * @param name                name of extension in spi file
      * @param group               expected group name of extension, match with the "groups" of @{@link Feature}
      * @param matchGroupIfMissing whether return the extensions whose @{@link Feature} "groups" is not configured
-     *
      * @return match extension with Optional
      */
     public Optional<T> getByFeature(String name, String group, boolean matchGroupIfMissing) {
