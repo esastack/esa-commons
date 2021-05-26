@@ -21,14 +21,32 @@ import esa.commons.spi.extensionloader.noparam.NoDefaultSpi;
 import esa.commons.spi.extensionloader.noparam.RightDefaultSpi;
 import esa.commons.spi.extensionloader.noparam.RightDefaultSpiImpl;
 import esa.commons.spi.extensionloader.noparam.WrongDefaultSpi;
-import esa.commons.spi.extensionloader.sort.wrapper.*;
-import esa.commons.spi.extensionloader.wrapper.*;
+import esa.commons.spi.extensionloader.sort.wrapper.TestWrapperSortSpi;
+import esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl1;
+import esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl2;
+import esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl3;
+import esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl4;
+import esa.commons.spi.extensionloader.sort.wrapper.WrapperSortSpiImpl5;
+import esa.commons.spi.extensionloader.wrapper.NormalClass;
+import esa.commons.spi.extensionloader.wrapper.NormalInterface;
+import esa.commons.spi.extensionloader.wrapper.SpiWrapperImpl1;
+import esa.commons.spi.extensionloader.wrapper.SpiWrapperImpl2;
+import esa.commons.spi.extensionloader.wrapper.TestWrapperSpi;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeSet;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This class contains three types of test:
