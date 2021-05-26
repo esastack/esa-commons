@@ -23,7 +23,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -77,8 +77,8 @@ public final class SecurityUtils {
 
             messageDigest.reset();
 
-            messageDigest.update(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
+            messageDigest.update(str.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("md5 encode error", e);
         }
 
@@ -99,7 +99,7 @@ public final class SecurityUtils {
     public static String getHmacSHA1(byte[] data, final String key) {
         try {
             Mac mac = Mac.getInstance("HmacSHA1");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes("UTF-8"), mac.getAlgorithm());
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), mac.getAlgorithm());
             mac.init(secretKeySpec);
             return binToHex(mac.doFinal(data));
         } catch (Exception e) {
@@ -111,8 +111,8 @@ public final class SecurityUtils {
         private static final String KEY_ALGORITHM = "EC";
 
         public static class ECDSAKey {
-            private String publicKey;
-            private String privateKey;
+            private final String publicKey;
+            private final String privateKey;
 
             public ECDSAKey(String publicKey, String privateKey) {
                 this.publicKey = publicKey;

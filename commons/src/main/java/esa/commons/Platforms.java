@@ -20,7 +20,7 @@ import java.security.PrivilegedAction;
 
 public final class Platforms {
 
-    private static int availableProcessors = Runtime.getRuntime().availableProcessors();
+    private static final int NCPU = Runtime.getRuntime().availableProcessors();
     private static final boolean IS_LINUX = isLinux0();
     private static final boolean IS_WINDOWS = isWindows0();
     private static final int JAVA_VERSION = getJavaVersion();
@@ -37,7 +37,7 @@ public final class Platforms {
     }
 
     public static int cpuNum() {
-        return availableProcessors;
+        return NCPU;
     }
 
     public static int javaVersion() {
