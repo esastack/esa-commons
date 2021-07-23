@@ -17,7 +17,9 @@ package esa.commons.http;
 
 /**
  * Version of the HTTP protocol.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public enum HttpVersion {
 
     /**

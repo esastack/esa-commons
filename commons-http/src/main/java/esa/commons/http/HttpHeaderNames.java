@@ -17,7 +17,9 @@ package esa.commons.http;
 
 /**
  * Lowercase standard Http header names.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public final class HttpHeaderNames {
 
     public static final String ACCEPT = "accept";

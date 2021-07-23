@@ -21,7 +21,9 @@ import esa.commons.StringUtils;
 
 /**
  * Method of the HTTP protocol.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public enum HttpMethod {
 
     /**

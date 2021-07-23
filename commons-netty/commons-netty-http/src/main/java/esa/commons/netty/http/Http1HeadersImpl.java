@@ -25,10 +25,11 @@ import java.util.Map;
 
 import static esa.commons.netty.http.Utils.VALUE_CONVERTER;
 
-
 /**
  * Implementing {@link HttpHeaders} by extending {@link DefaultHttpHeaders}.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public class Http1HeadersImpl extends DefaultHttpHeaders implements HttpHeaders {
 
     public Http1HeadersImpl() {

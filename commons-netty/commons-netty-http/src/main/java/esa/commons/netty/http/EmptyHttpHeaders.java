@@ -26,7 +26,9 @@ import java.util.Set;
 
 /**
  * Empty implements of {@link HttpHeaders}
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public final class EmptyHttpHeaders implements HttpHeaders {
 
     public static final EmptyHttpHeaders INSTANCE = new EmptyHttpHeaders();

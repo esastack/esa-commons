@@ -17,7 +17,9 @@ package esa.commons.http;
 
 /**
  * Lowercase standard Http header values.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public final class HttpHeaderValues {
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_X_WWW_FORM_URLENCODED =

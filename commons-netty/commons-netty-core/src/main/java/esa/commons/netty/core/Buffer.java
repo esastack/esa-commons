@@ -22,7 +22,9 @@ import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * Interface wraps the {@link ByteBuf}.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public interface Buffer {
 
     /**

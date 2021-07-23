@@ -103,7 +103,6 @@
         <module>commons</module>
         <module>commons-http</module>
         <module>commons-netty</module>
-        <module>commons-build</module>
         <module>commons-concurrency-test</module>
         <module>commons-benchmarks</module>
     </modules>
@@ -117,6 +116,7 @@
         <netty.version>4.1.52.Final</netty.version>
         <junit.version>5.4.2</junit.version>
         <mockito.version>3.3.3</mockito.version>
+        <commons.build.version>1.0</commons.build.version>
     </properties>
 
     <dependencies>
@@ -164,7 +164,7 @@
                             <id>check-style</id>
                             <configuration>
                                 <skip>false</skip>
-                                <configLocation>esa/commons/checkstyle.xml</configLocation>
+                                <configLocation>io/esastack/commons/checkstyle.xml</configLocation>
                                 <encoding>${encoding}</encoding>
                                 <consoleOutput>true</consoleOutput>
                                 <logViolationsToConsole>true</logViolationsToConsole>
@@ -189,9 +189,9 @@
                             <version>8.35</version>
                         </dependency>
                         <dependency>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>io.esastack</groupId>
                             <artifactId>commons-build</artifactId>
-                            <version>${project.version}</version>
+                            <version>${commons.build.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>

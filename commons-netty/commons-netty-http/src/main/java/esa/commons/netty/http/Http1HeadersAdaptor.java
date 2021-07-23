@@ -27,10 +27,11 @@ import java.util.Set;
 
 import static esa.commons.netty.http.Utils.VALUE_CONVERTER;
 
-
 /**
  * Using a instance of {@link io.netty.handler.codec.http.HttpHeaders} as a proxy.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public class Http1HeadersAdaptor implements HttpHeaders {
 
     protected final io.netty.handler.codec.http.HttpHeaders underlying;
