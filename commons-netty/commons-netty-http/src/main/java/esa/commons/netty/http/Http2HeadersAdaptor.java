@@ -31,7 +31,9 @@ import java.util.Set;
 
 /**
  * Using a instance of {@link Http2Headers} as a proxy.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public class Http2HeadersAdaptor implements HttpHeaders {
 
     protected final Http2Headers underlying;

@@ -23,7 +23,9 @@ import java.util.Set;
 /**
  * Interface for http headers which represents a mapping of key to value. Duplicate keys may be allowed by
  * implementations.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public interface HttpHeaders extends Iterable<Map.Entry<String, String>> {
 
     /**

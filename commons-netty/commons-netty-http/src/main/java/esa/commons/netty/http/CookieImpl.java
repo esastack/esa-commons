@@ -23,7 +23,9 @@ import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 
 /**
  * Implementation of {@link Cookie} that delegates the {@link io.netty.handler.codec.http.cookie.Cookie}.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public class CookieImpl implements Cookie {
 
     protected final io.netty.handler.codec.http.cookie.Cookie cookie;

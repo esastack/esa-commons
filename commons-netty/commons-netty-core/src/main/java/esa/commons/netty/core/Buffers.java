@@ -19,7 +19,9 @@ import io.netty.buffer.Unpooled;
 
 /**
  * Unity class of {@link Buffer}.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public final class Buffers {
 
     /**

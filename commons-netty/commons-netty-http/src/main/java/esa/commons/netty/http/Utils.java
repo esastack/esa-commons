@@ -18,6 +18,10 @@ package esa.commons.netty.http;
 import io.netty.handler.codec.CharSequenceValueConverter;
 import io.netty.handler.codec.ValueConverter;
 
+/**
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
+ */
+@Deprecated
 final class Utils {
 
     static final ValueConverter<CharSequence> VALUE_CONVERTER = CharSequenceValueConverter.INSTANCE;

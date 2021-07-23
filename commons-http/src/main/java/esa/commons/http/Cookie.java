@@ -17,7 +17,9 @@ package esa.commons.http;
 
 /**
  * Interface defines <a href="http://en.wikipedia.org/wiki/HTTP_cookie">HTTP cookie</a>.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public interface Cookie {
 
     /**

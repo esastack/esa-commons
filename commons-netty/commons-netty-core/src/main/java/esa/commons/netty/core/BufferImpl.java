@@ -25,7 +25,9 @@ import java.util.Objects;
 
 /**
  * Implementation of {@link Buffer} that wraps an {@link #underlying}.
+ * @deprecated use https://github.com/esastack/esa-commons-net instead
  */
+@Deprecated
 public class BufferImpl implements Buffer {
 
     /**
