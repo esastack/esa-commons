@@ -96,6 +96,10 @@ public final class SecurityUtils {
         return md5StrBuff.toString();
     }
 
+    /**
+     * @deprecated weak encryption algorithm
+     */
+    @Deprecated
     public static String getHmacSHA1(byte[] data, final String key) {
         try {
             Mac mac = Mac.getInstance("HmacSHA1");
