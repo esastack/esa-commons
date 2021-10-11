@@ -11,16 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -328,22 +319,12 @@ public class SpiLoader<T> {
      *
      * @see #getByFeature(Collection, String, boolean, Map, boolean, boolean)
      */
-    public List<T> getByFeature(Collection<String> forceIncludeNames,
+    public List<T> getByFeature(Collection<String> namesFilter,
                                 String group,
                                 boolean matchGroupIfMissing,
                                 Map<String, String> tags,
                                 boolean matchTagIfMissing) {
-        return getByFeature(forceIncludeNames, group, matchGroupIfMissing, tags, matchTagIfMissing, false);
-    }
-
-    public List<T> getByFeature(Collection<String> forceIncludeNames,
-                                String group,
-                                boolean matchGroupIfMissing,
-                                Map<String, String> tags,
-                                boolean matchTagIfMissing,
-                                boolean continueIfErr) {
-        return getByFeature(forceIncludeNames, null, group, matchGroupIfMissing, tags,
-                matchTagIfMissing, continueIfErr);
+        return getByFeature(namesFilter, group, matchGroupIfMissing, tags, matchTagIfMissing, false);
     }
 
     /**
@@ -351,8 +332,8 @@ public class SpiLoader<T> {
      * <p>- Match the input parameters with @{@link Feature} annotation's fields.</p>
      * <p>- Selectively get the extensions whose "groups" or "tags" of @{@link Feature} is not configured.</p>
      *
-     * @param forceIncludeNames   when group is match,expected name in forceIncludeNames will add to the result list
-     * @param forceExcludeNames   names in forceExcludeNames will not be added even if group is matched
+     * @param namesFilter         when group is match, names started with prefix "-" in namesFilter will be force
+     *                            removed from while others will be force added into the result list.
      * @param group               expected group name of extension, match with the "groups" of @{@link Feature}
      * @param tags                expected key-values of extension, match with the "tags" of @{@link Feature}
      * @param matchGroupIfMissing whether return the extensions whose @{@link Feature} "groups" is not configured
@@ -367,8 +348,7 @@ public class SpiLoader<T> {
      *                            </ul>
      * @param continueIfErr       whether continue if fail to load one of the extensions.
      */
-    public List<T> getByFeature(Collection<String> forceIncludeNames,
-                                Collection<String> forceExcludeNames,
+    public List<T> getByFeature(Collection<String> namesFilter,
                                 String group,
                                 boolean matchGroupIfMissing,
                                 Map<String, String> tags,
@@ -376,10 +356,12 @@ public class SpiLoader<T> {
                                 boolean continueIfErr) {
         List<T> featuredExtensions = new LinkedList<>();
         for (FeatureInfo featureInfo : featuresCache) {
-            if (!isMatchGroup(featureInfo.groups, group, matchGroupIfMissing)) {
+            if (!isMatchGroup(featureInfo.groups, group, matchGroupIfMissing) ||
+                    isForceExclude(namesFilter, featureInfo.name)) {
                 continue;
             }
-            if (isExpectName(featureInfo.name, forceIncludeNames, forceExcludeNames) ||
+
+            if (isForceInclude(namesFilter, featureInfo.name) ||
                     isMatchTags(featureInfo.tagsMap, featureInfo.excludeTagsMap, tags, matchTagIfMissing)) {
                 try {
                     getByName(featureInfo.name).ifPresent(featuredExtensions::add);
@@ -394,6 +376,23 @@ public class SpiLoader<T> {
         }
         return featuredExtensions;
     }
+
+    private boolean isForceInclude(Collection<String> namesFilter, String name) {
+        if (namesFilter == null || namesFilter.isEmpty()) {
+            return false;
+        }
+
+        return namesFilter.contains(name);
+    }
+
+    private boolean isForceExclude(Collection<String> namesFilter, String name) {
+        if (namesFilter == null || namesFilter.isEmpty()) {
+            return false;
+        }
+
+        return namesFilter.contains("-" + name);
+    }
+
 
     /**
      * <p>Get expected featured extensions.</p>
@@ -593,10 +592,6 @@ public class SpiLoader<T> {
 
         // If exclude tags not match, continue to match the feature tags
         return isMatchAnnotationTags(featureTagsArr, tags);
-    }
-
-    private boolean isExpectName(String name, Collection<String> expectSet, Collection<String> unExpectSet) {
-        return (expectSet != null && expectSet.contains(name)) && (unExpectSet == null || !expectSet.contains(name));
     }
 
     /**
