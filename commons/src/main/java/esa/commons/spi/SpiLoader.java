@@ -336,12 +336,23 @@ public class SpiLoader<T> {
         return getByFeature(forceIncludeNames, group, matchGroupIfMissing, tags, matchTagIfMissing, false);
     }
 
+    public List<T> getByFeature(Collection<String> forceIncludeNames,
+                                String group,
+                                boolean matchGroupIfMissing,
+                                Map<String, String> tags,
+                                boolean matchTagIfMissing,
+                                boolean continueIfErr) {
+        return getByFeature(forceIncludeNames, null, group, matchGroupIfMissing, tags,
+                matchTagIfMissing, continueIfErr);
+    }
+
     /**
      * <p>Get expected featured extensions.</p>
      * <p>- Match the input parameters with @{@link Feature} annotation's fields.</p>
      * <p>- Selectively get the extensions whose "groups" or "tags" of @{@link Feature} is not configured.</p>
      *
      * @param forceIncludeNames   when group is match,expected name in forceIncludeNames will add to the result list
+     * @param forceExcludeNames   names in forceExcludeNames will not be added even if group is matched
      * @param group               expected group name of extension, match with the "groups" of @{@link Feature}
      * @param tags                expected key-values of extension, match with the "tags" of @{@link Feature}
      * @param matchGroupIfMissing whether return the extensions whose @{@link Feature} "groups" is not configured
@@ -357,6 +368,7 @@ public class SpiLoader<T> {
      * @param continueIfErr       whether continue if fail to load one of the extensions.
      */
     public List<T> getByFeature(Collection<String> forceIncludeNames,
+                                Collection<String> forceExcludeNames,
                                 String group,
                                 boolean matchGroupIfMissing,
                                 Map<String, String> tags,
@@ -367,7 +379,7 @@ public class SpiLoader<T> {
             if (!isMatchGroup(featureInfo.groups, group, matchGroupIfMissing)) {
                 continue;
             }
-            if (isExpectName(featureInfo.name, forceIncludeNames) ||
+            if (isExpectName(featureInfo.name, forceIncludeNames, forceExcludeNames) ||
                     isMatchTags(featureInfo.tagsMap, featureInfo.excludeTagsMap, tags, matchTagIfMissing)) {
                 try {
                     getByName(featureInfo.name).ifPresent(featuredExtensions::add);
@@ -583,8 +595,8 @@ public class SpiLoader<T> {
         return isMatchAnnotationTags(featureTagsArr, tags);
     }
 
-    private boolean isExpectName(String name, Collection<String> expectSet) {
-        return expectSet != null && expectSet.contains(name);
+    private boolean isExpectName(String name, Collection<String> expectSet, Collection<String> unExpectSet) {
+        return (expectSet != null && expectSet.contains(name)) && (unExpectSet == null || !expectSet.contains(name));
     }
 
     /**
