@@ -11,7 +11,16 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -332,8 +341,8 @@ public class SpiLoader<T> {
      * <p>- Match the input parameters with @{@link Feature} annotation's fields.</p>
      * <p>- Selectively get the extensions whose "groups" or "tags" of @{@link Feature} is not configured.</p>
      *
-     * @param namesFilter         when group is match, names started with prefix "-" in namesFilter will be force
-     *                            removed from while others will be force added into the result list.
+     * @param namesFilter         when group is matched, names started with prefix "-" in namesFilter will be forcibly
+     *                            removed while others will be forcibly added into the result list.
      * @param group               expected group name of extension, match with the "groups" of @{@link Feature}
      * @param tags                expected key-values of extension, match with the "tags" of @{@link Feature}
      * @param matchGroupIfMissing whether return the extensions whose @{@link Feature} "groups" is not configured

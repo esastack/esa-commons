@@ -22,16 +22,20 @@ import esa.commons.spi.extensionloader.emptyparams.Impl1;
 import esa.commons.spi.extensionloader.emptyparams.Impl2;
 import esa.commons.spi.extensionloader.emptyparams.Impl3;
 import esa.commons.spi.extensionloader.emptyparams.TestEmptySpi;
+import esa.commons.spi.extensionloader.forcespecify.*;
 import esa.commons.spi.extensionloader.wrapper.TestWrapperSpi;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class AllTypeGetExtensionFunctionTest {
 
@@ -198,5 +202,29 @@ class AllTypeGetExtensionFunctionTest {
 
         assertThrows(Exception.class, () -> loader.getByFeature("TEST", tags));
         assertEquals(2, loader.getByFeature("TEST", tags, true).size());
+    }
+
+    @Test
+    void testForceSpecify() {
+        final Set<String> namesFilter = new HashSet<>();
+        namesFilter.add("impl1");
+        namesFilter.add("-impl2");
+        namesFilter.add("impl4");
+        final Map<String, String> tags = new HashMap<>();
+        tags.put("k1", "v1");
+
+        final SpiLoader<TestForceSpecify> loader = SpiLoader.cached(TestForceSpecify.class);
+        List<TestForceSpecify> testForceSpecifies = loader.getByFeature(namesFilter, "group1", false,
+                tags, false, false);
+        assertEquals(2, testForceSpecifies.size());
+
+        final Set<String> clzNamesLoaded = new HashSet<>();
+        for (TestForceSpecify forceSpecify : testForceSpecifies) {
+            clzNamesLoaded.add(forceSpecify.getClass().getName());
+        }
+        assertTrue(clzNamesLoaded.contains(TestForceSpecifyImpl1.class.getName()));
+        assertFalse(clzNamesLoaded.contains(TestForceSpecifyImpl2.class.getName()));
+        assertTrue(clzNamesLoaded.contains(TestForceSpecifyImpl3.class.getName()));
+        assertFalse(clzNamesLoaded.contains(TestForceSpecifyImpl4.class.getName()));
     }
 }
