@@ -6,9 +6,15 @@ import esa.commons.ClassUtils;
 import esa.commons.StringUtils;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
+import esa.commons.spi.factory.AdaptiveExtensionFactory;
+import esa.commons.spi.factory.DisableInject;
+import esa.commons.spi.factory.ExtensionFactory;
+import esa.commons.spi.factory.Inject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -66,6 +72,8 @@ public class SpiLoader<T> {
     private final Set<FeatureInfo> featuresCache = new TreeSet<>();
     private final Class<T> type;
     private final String defaultExtension;
+
+    private static final ExtensionFactory EXTENSION_FACTORY = new AdaptiveExtensionFactory();
 
     private SpiLoader(Class<T> type) {
         this.type = type;
@@ -434,13 +442,85 @@ public class SpiLoader<T> {
         }
         try {
             T instance = extensionClass.newInstance();
+
+            // inject object
+            injectExtension(instance);
             for (WrapperClassInfo<?> wrapperClassInfo : wrapperClasses) {
-                instance = (T) wrapperClassInfo.getClazz().getConstructor(type).newInstance(instance);
+                instance = injectExtension((T) wrapperClassInfo.getClazz().getConstructor(type).newInstance(instance));
             }
             return instance;
         } catch (Throwable t) {
             throw new IllegalStateException("Extension instance of class (" + type + ") couldn't be instantiated", t);
         }
+    }
+
+    private T injectExtension(T instance) {
+        if (EXTENSION_FACTORY == null) {
+            return instance;
+        }
+
+        try {
+            for (Method method : instance.getClass().getDeclaredMethods()) {
+                if (!isSetter(method)) {
+                    continue;
+                }
+
+                if (method.isAnnotationPresent(DisableInject.class)) {
+                    continue;
+                }
+
+                Class<?> type = method.getParameterTypes()[0];
+                if (type.isPrimitive()) {
+                    continue;
+                }
+                try {
+                    String name;
+                    if (method.isAnnotationPresent(Inject.class)) {
+                        name = method.getAnnotation(Inject.class).value();
+                        if (StringUtils.isEmpty(name)) {
+                            name = getSetterProperty(method);
+                        }
+                    } else {
+                        name = getSetterProperty(method);
+                    }
+                    Object extension = EXTENSION_FACTORY.getExtension(type, name);
+                    if (extension != null) {
+                        method.invoke(instance, extension);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Failed to inject extension via method {} of interface {}: {}",
+                            method.getName(), type.getName(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to inject extension: {}", e);
+        }
+        return instance;
+    }
+
+    /**
+     * return true if and only if:
+     * <p>
+     * 1, public
+     * <p>
+     * 2, name starts with "set"
+     * <p>
+     * 3, only has one parameter
+     */
+    private boolean isSetter(Method method) {
+        return method.getName().startsWith("set")
+                && method.getParameterTypes().length == 1
+                && Modifier.isPublic(method.getModifiers());
+    }
+
+    /**
+     * get properties name for setter, for instance: setVersion, return "version"
+     * <p>
+     * return "", if setter name with length less than 3
+     */
+    private String getSetterProperty(Method method) {
+        return method.getName().length() > 3
+                ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
     }
 
     /**
