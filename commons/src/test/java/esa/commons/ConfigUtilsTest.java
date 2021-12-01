@@ -266,6 +266,7 @@ class ConfigUtilsTest {
         final Map<String, String> envs = System.getenv();
         final ConfigUtils util = ConfigUtils.custom().readFromEnv().build();
         envs.forEach((k, v) -> {
+            System.out.println("expected env: k: " + v);
             assertEquals(v, util.getStr(k));
             assertEquals(v, util.getStr(k.toUpperCase()));
             assertEquals(v, util.getStr(k.replace('_', '.')));
