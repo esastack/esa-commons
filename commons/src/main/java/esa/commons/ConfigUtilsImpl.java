@@ -5,11 +5,11 @@ import esa.commons.logging.LoggerFactory;
 
 import java.util.function.Function;
 
-final class ConfigUtilImpl implements ConfigUtil {
-    static final Logger logger = LoggerFactory.getLogger(ConfigUtilImpl.class);
+final class ConfigUtilsImpl implements ConfigUtils {
+    static final Logger logger = LoggerFactory.getLogger(ConfigUtilsImpl.class);
     private final Function<String, String> getter;
 
-    ConfigUtilImpl(Function<String, String> getter) {
+    ConfigUtilsImpl(Function<String, String> getter) {
         Checks.checkNotNull(getter, "getter");
         this.getter = getter;
     }

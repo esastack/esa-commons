@@ -3,6 +3,7 @@ package esa.commons;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -11,20 +12,22 @@ import java.util.function.Function;
  * Unity class for retrieving config properties from {@link System#getProperties()}, {@link System#getenv()} and
  * custom {@link Map}.
  */
-public interface ConfigUtil {
+public interface ConfigUtils {
 
     /**
-     * Default instance of {@link ConfigUtil} which retrieves properties from {@link System#getProperties()} firstly,
-     * and then retrieves from {@link System#getenv()} if missing.
+     * Default instance of {@link ConfigUtils} which retrieves properties from {@link System#getProperties()} firstly,
+     * and then retrieves from {@link System#getenv()} if missing. Especially, when we try to retrieve value from
+     * {@link System#getenv()}, we will replace the '_' in the key with a '.' and try to retrieve value from
+     * {@link System#getenv()}.
      */
-    static ConfigUtil get() {
+    static ConfigUtils get() {
         return Builder.DEFAULT;
     }
 
     /**
      * Creates a new instance by {@link Builder}.
      */
-    static Builder create() {
+    static Builder custom() {
         return new Builder();
     }
 
@@ -52,7 +55,7 @@ public interface ConfigUtil {
         try {
             return Boolean.parseBoolean(v);
         } catch (RuntimeException e) {
-            ConfigUtilImpl.logger.debug("Unable to parse bool property '{}':{}", name, v, e);
+            ConfigUtilsImpl.logger.debug("Unable to parse bool property '{}':{}", name, v, e);
             return null;
         }
     }
@@ -76,7 +79,7 @@ public interface ConfigUtil {
         try {
             return Integer.parseInt(v);
         } catch (RuntimeException e) {
-            ConfigUtilImpl.logger.debug("Unable to parse int property '{}':{}", name, v, e);
+            ConfigUtilsImpl.logger.debug("Unable to parse int property '{}':{}", name, v, e);
             return null;
         }
     }
@@ -100,7 +103,7 @@ public interface ConfigUtil {
         try {
             return Long.parseLong(v);
         } catch (RuntimeException e) {
-            ConfigUtilImpl.logger.debug("Unable to parse long property '{}':{}", name, v, e);
+            ConfigUtilsImpl.logger.debug("Unable to parse long property '{}':{}", name, v, e);
             return null;
         }
     }
@@ -124,7 +127,7 @@ public interface ConfigUtil {
         try {
             return Double.parseDouble(v);
         } catch (RuntimeException e) {
-            ConfigUtilImpl.logger.debug("Unable to parse double property '{}':{}", name, v, e);
+            ConfigUtilsImpl.logger.debug("Unable to parse double property '{}':{}", name, v, e);
             return null;
         }
     }
@@ -158,6 +161,11 @@ public interface ConfigUtil {
         String unit = v.substring(unitIdx + 1).trim();
         String value = v.substring(0, v.length() - unit.length()).trim();
 
+        if (value.isEmpty()) {
+            ConfigUtilsImpl.logger.debug("Unable to parse duration property '{}':{}", name, v);
+            return null;
+        }
+
         try {
             long number = Long.parseLong(value);
             switch (unit) {
@@ -176,7 +184,7 @@ public interface ConfigUtil {
                     throw new IllegalArgumentException("Invalid duration: " + v);
             }
         } catch (RuntimeException e) {
-            ConfigUtilImpl.logger.debug("Unable to parse duration property '{}':{}", name, v, e);
+            ConfigUtilsImpl.logger.debug("Unable to parse duration property '{}':{}", name, v, e);
             return null;
         }
     }
@@ -231,7 +239,7 @@ public interface ConfigUtil {
             String[] kv = s.split("=", 2);
             String k;
             if (kv.length != 2 || (k = kv[0].trim()).isEmpty()) {
-                ConfigUtilImpl.logger.debug("Unable to parse map property '{}':{}", name, getStr(name));
+                ConfigUtilsImpl.logger.debug("Unable to parse map property '{}':{}", name, getStr(name));
                 return null;
             }
             map.put(k, StringUtils.trim(kv[1]));
@@ -249,13 +257,16 @@ public interface ConfigUtil {
 
     class Builder {
 
-        private static final ConfigUtil DEFAULT =
+        private static final ConfigUtils DEFAULT =
                 new Builder().readFromSystemProperty().readFromEnv().build();
 
-        private final List<Function<String, String>> getters = new ArrayList<>(3);
+        private final List<Function<String, String>> getters = new LinkedList<>();
 
         public Builder readFromEnv() {
             getters.add(System::getenv);
+            // System.getenv() is case insensitive
+            // io_esastack_url -->  io.esastak.url
+            getters.add(k -> System.getenv(k.replace('.', '_')));
             return this;
         }
 
@@ -270,7 +281,7 @@ public interface ConfigUtil {
             return this;
         }
 
-        public ConfigUtil build() {
+        public ConfigUtils build() {
             Function<String, String> getter;
 
             if (getters.isEmpty()) {
@@ -281,9 +292,10 @@ public interface ConfigUtil {
             if (getters.size() == 1) {
                 getter = getters.get(0);
             } else {
+                final Function<String, String>[] theGetters = getters.toArray(new Function[0]);
                 getter = s -> {
                     String v = null;
-                    for (Function<String, String> g : getters) {
+                    for (Function<String, String> g : theGetters) {
                         v = g.apply(s);
                         if (StringUtils.isNotEmpty(v)) {
                             break;
@@ -292,7 +304,7 @@ public interface ConfigUtil {
                     return v;
                 };
             }
-            return new ConfigUtilImpl(getter);
+            return new ConfigUtilsImpl(getter);
         }
     }
 
