@@ -266,9 +266,11 @@ class ConfigUtilsTest {
         final Map<String, String> envs = System.getenv();
         final ConfigUtils util = ConfigUtils.custom().readFromEnv().build();
         envs.forEach((k, v) -> {
-            System.out.println("expected env: " + k + "=" + v);
             assertEquals(v, util.getStr(k));
-            assertEquals(v, util.getStr(k.toUpperCase()));
+            if (Platforms.isWindows()) {
+                // case insensitive in windows
+                assertEquals(v, util.getStr(k.toUpperCase()));
+            }
             assertEquals(v, util.getStr(k.replace('_', '.')));
         });
         assertNull(util.getStr("io.esastack.configutil.$absent"));

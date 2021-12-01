@@ -265,7 +265,7 @@ public interface ConfigUtils {
         public Builder readFromEnv() {
             getters.add(System::getenv);
             // System.getenv() is case insensitive
-            // IO_ESASTACK_URL -->  io.esastak.url
+            // io_esastack_url -->  io.esastak.url
             getters.add(k -> System.getenv(k.replace('.', '_')));
             return this;
         }
