@@ -37,6 +37,11 @@ public class AttributeMap extends HashMap<AttributeKey<?>, Attribute<?>> impleme
         super(initCapacity, loadFactor);
     }
 
+    public AttributeMap(Attributes attributes) {
+        super(attributes.size());
+        attributes.forEach(this::put);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <V> Attribute<V> attr(AttributeKey<V> key) {

@@ -140,4 +140,18 @@ class AttributeMapTest {
         assertEquals(6, attrs.size());
     }
 
+    @Test
+    void testCreateFromAnotherAttributes() {
+        final AttributeMap attrs = new AttributeMap();
+        attrs.attr(AttributeKey.stringKey("foo")).set("1");
+        attrs.attr(AttributeKey.stringKey("bar")).set("2");
+
+        final AttributeMap attrs1 = new AttributeMap(attrs);
+        assertEquals(2, attrs1.size());
+        assertTrue(attrs1.hasAttr(AttributeKey.stringKey("foo")));
+        assertTrue(attrs1.hasAttr(AttributeKey.stringKey("bar")));
+        assertEquals("1", attrs1.attr(AttributeKey.stringKey("foo")).get());
+        assertEquals("2", attrs1.attr(AttributeKey.stringKey("bar")).get());
+    }
+
 }
