@@ -58,6 +58,7 @@ class AttributeMapTest {
         final AttributeMap attrs = new AttributeMap();
         final Attribute<String> attr = attrs.attr(AttributeKey.stringKey("foo"));
         assertNull(attr.get());
+        assertEquals("foo", attr.key().name());
         assertEquals("def", attr.getOrDefault("def"));
 
         attrs.attr(AttributeKey.stringKey("foo")).set("test");

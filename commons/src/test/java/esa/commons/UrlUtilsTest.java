@@ -28,6 +28,7 @@ class UrlUtilsTest {
     void testPrependLeadingSlash() {
         assertEquals("/foo", UrlUtils.prependLeadingSlash("foo"));
         assertEquals("/foo", UrlUtils.prependLeadingSlash("/foo"));
+        assertEquals("", UrlUtils.prependLeadingSlash(""));
 
         assertArrayEquals(new String[]{"/foo", "/bar"},
                 UrlUtils.prependLeadingSlash(Arrays.asList("foo", "/bar")).toArray());
