@@ -25,21 +25,21 @@ public interface AttributeKey<V> {
     /**
      * Returns a new {@link AttributeKey}.
      */
-    static <V> AttributeKey<V> valueOf(String key) {
-        return DefaultAttributeKey.create(key);
+    static <V> AttributeKey<V> valueOf(String name) {
+        return DefaultAttributeKey.create(name);
     }
 
     /**
      * Returns a new {@link AttributeKey} for String valued attributes.
      */
-    static AttributeKey<String> stringKey(String key) {
-        return valueOf(key);
+    static AttributeKey<String> stringKey(String name) {
+        return valueOf(name);
     }
 
     /**
      * String key.
      */
-    String key();
+    String name();
 
     /**
      * The identifier of this instance. it could be a hint for improving performance in some special implementations.

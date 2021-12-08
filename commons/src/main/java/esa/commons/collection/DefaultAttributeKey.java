@@ -17,28 +17,26 @@ package esa.commons.collection;
 
 import esa.commons.Checks;
 
-import java.util.Objects;
-
 /**
  * Default implementation of {@link AttributeKey} which just wrap the given string key as the identifier.
  */
 final class DefaultAttributeKey<V> implements AttributeKey<V> {
 
-    private final String key;
+    private final String name;
 
     @SuppressWarnings("unchecked")
-    static <V> DefaultAttributeKey<V> create(String key) {
-        Checks.checkNotEmptyArg(key, "key");
-        return new DefaultAttributeKey<>(key);
+    static <V> DefaultAttributeKey<V> create(String name) {
+        Checks.checkNotEmptyArg(name, "name");
+        return new DefaultAttributeKey<>(name);
     }
 
-    DefaultAttributeKey(String key) {
-        this.key = key;
+    DefaultAttributeKey(String name) {
+        this.name = name;
     }
 
     @Override
-    public String key() {
-        return key;
+    public String name() {
+        return name;
     }
 
     @Override
@@ -50,16 +48,16 @@ final class DefaultAttributeKey<V> implements AttributeKey<V> {
             return false;
         }
         DefaultAttributeKey<?> that = (DefaultAttributeKey<?>) o;
-        return this.key.equals(that.key);
+        return this.name.equals(that.name);
     }
 
     @Override
     public int hashCode() {
-        return key.hashCode();
+        return name.hashCode();
     }
 
     @Override
     public String toString() {
-        return key();
+        return name();
     }
 }

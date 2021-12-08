@@ -25,7 +25,7 @@ class DefaultAttributeKeyTest {
     @Test
     void testAll() {
         final AttributeKey<String> key = DefaultAttributeKey.create("foo");
-        assertEquals("foo", key.key());
+        assertEquals("foo", key.name());
         assertEquals("foo".hashCode(), key.id());
         assertEquals("foo", key.toString());
         assertEquals(key, key);
