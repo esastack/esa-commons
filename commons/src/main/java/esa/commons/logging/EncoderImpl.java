@@ -22,6 +22,7 @@ import esa.commons.Platforms;
 import esa.commons.StringUtils;
 import esa.commons.concurrent.UnsafeUtils;
 import esa.commons.reflect.ReflectionUtils;
+import io.netty.util.internal.SystemPropertyUtil;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -43,6 +44,11 @@ class EncoderImpl implements Encoder {
     private static final Map<String, Function<String, Converter<LogEvent>>> CONVERTERS;
     private static final Function<StringBuilder, byte[]> ENCODER;
     private static final BiFunction<StringBuilder, Charset, byte[]> ENCODER_WITH_CHARSET;
+
+    // See https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/
+    // ImageInfo.java
+    private static final boolean RUNNING_IN_NATIVE_IMAGE = SystemPropertyUtil.contains(
+            "org.graalvm.nativeimage.imagecode");
 
     private final Converter<LogEvent> converter;
     private final Function<StringBuilder, byte[]> strEncoder;
@@ -171,7 +177,7 @@ class EncoderImpl implements Encoder {
                 Class<?> abstractStringBuilder =
                         Class.forName("java.lang.AbstractStringBuilder", true, cl);
 
-                if (UnsafeUtils.hasUnsafe()) {
+                if (unsafeStaticFieldOffsetSupported() && UnsafeUtils.hasUnsafe()) {
                     valueFieldOffset =
                             UnsafeUtils.objectFieldOffset(abstractStringBuilder, "value");
                 } else {
@@ -288,5 +294,9 @@ class EncoderImpl implements Encoder {
         } else {
             ENCODER_WITH_CHARSET = en1;
         }
+    }
+
+    private static boolean unsafeStaticFieldOffsetSupported() {
+        return !RUNNING_IN_NATIVE_IMAGE;
     }
 }
