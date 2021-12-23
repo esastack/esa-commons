@@ -69,6 +69,46 @@ public final class ObjectUtils {
         return null;
     }
 
+    /**
+     * Determine whether the given class type is a box type of primitive type.
+     * @param clz target class type
+     * @return true if and only if this class represents a box type of  primitive type as follows:
+     * <ul>
+     * <li>{@link java.lang.Boolean}
+     * <li>{@link java.lang.Character}
+     * <li>{@link java.lang.Byte}
+     * <li>{@link java.lang.Short}
+     * <li>{@link java.lang.Integer}
+     * <li>{@link java.lang.Long}
+     * <li>{@link java.lang.Float}
+     * <li>{@link java.lang.Double}
+     * <li>{@link java.lang.Void}
+     * </ul>
+     */
+    public static boolean isPrimitiveWrapper(Class<?> clz) {
+        try {
+            return ((Class<?>) clz.getField("TYPE").get(null)).isPrimitive();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the default value of given target class type.
+     * @param clz target class type
+     * @return null only if target class type is not boxed type of primitive type
+     */
+    public static Object wrapperDefaultValue(Class<?> clz) {
+        if (!isPrimitiveWrapper(clz)) {
+            return null;
+        }
+        try {
+            return defaultValue((Class<?>) clz.getField("TYPE").get(null));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static Object instantiateBeanIfNecessary(Object target) {
         if (target instanceof Class) {
             Class<?> clz = (Class<?>) target;
