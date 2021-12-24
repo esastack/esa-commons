@@ -59,7 +59,7 @@ public class SpiLoader<T> {
      * <p>Whether to allow circular dependencies, not allowed by default.</p>
      * <p>Can be set by environment variables io_esastack_spi_allowCircularReferences or
      * io.esastack.spi.allowCircularReferences and vm options -Dio.esastack.spi.allowCircularReferences</p>
-     * <p>Environment variables have higher priority than vm options</p>
+     * <p>Vm options have higher priority than Environment variables</p>
      */
     private static final boolean ALLOW_CYCLE;
 
@@ -112,12 +112,7 @@ public class SpiLoader<T> {
     static {
         SpiLoader<ExtensionFactory> loader = SpiLoader.cached(ExtensionFactory.class);
         EXTENSION_FACTORIES = loader.getAll();
-        String allowCycle = ConfigUtils.get().getStr(ALLOW_CYCLE_KEY);
-        if (StringUtils.isEmpty(allowCycle)) {
-            ALLOW_CYCLE = Boolean.parseBoolean(ConfigUtils.get().getStr(ALLOW_CYCLE_KEY, "false"));
-        } else {
-            ALLOW_CYCLE = Boolean.parseBoolean(allowCycle);
-        }
+        ALLOW_CYCLE = ConfigUtils.get().getBool(ALLOW_CYCLE_KEY, false);
     }
 
     private static <T> T getExtensionByName(Class<T> type, String name) {
@@ -657,7 +652,7 @@ public class SpiLoader<T> {
                                 "context form a cycle, one of the bean is " + pair.getName() +
                                 ", As a last resort, it may be possible to break the cycle automatically " +
                                 "by setting env " + ALLOW_CYCLE_KEY + " to true or " +
-                                "setting VM options -D" + ALLOW_CYCLE_KEY +" to true.");
+                                "setting VM options -D" + ALLOW_CYCLE_KEY + " to true.");
                     }
                 } else {
                     extension = getExtensionByName(pair.getExtensionType(), pair.getName());
