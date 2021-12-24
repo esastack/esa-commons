@@ -17,12 +17,12 @@ package esa.commons.logging;
 
 import esa.commons.Checks;
 import esa.commons.ClassUtils;
+import esa.commons.ConfigUtils;
 import esa.commons.ExceptionUtils;
 import esa.commons.Platforms;
 import esa.commons.StringUtils;
 import esa.commons.concurrent.UnsafeUtils;
 import esa.commons.reflect.ReflectionUtils;
-import io.netty.util.internal.SystemPropertyUtil;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -47,8 +47,8 @@ class EncoderImpl implements Encoder {
 
     // See https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/
     // ImageInfo.java
-    private static final boolean RUNNING_IN_NATIVE_IMAGE = SystemPropertyUtil.contains(
-            "org.graalvm.nativeimage.imagecode");
+    private static final boolean RUNNING_IN_NATIVE_IMAGE = ConfigUtils.get().getStr(
+            "org.graalvm.nativeimage.imagecode") != null;
 
     private final Converter<LogEvent> converter;
     private final Function<StringBuilder, byte[]> strEncoder;
