@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 OPPO ESA Stack Project
+ * Copyright 2021 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,23 @@ package esa.commons;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UrlUtilsTest {
+class ConfigUtilsImplTest {
 
     @Test
-    void testPrependLeadingSlash() {
-        assertEquals("/foo", UrlUtils.prependLeadingSlash("foo"));
-        assertEquals("/foo", UrlUtils.prependLeadingSlash("/foo"));
-        assertEquals("", UrlUtils.prependLeadingSlash(""));
+    void testConstructor() {
+        assertNotNull(new ConfigUtilsImpl(k -> k));
+        assertThrows(NullPointerException.class, () -> new ConfigUtilsImpl(null));
+    }
 
-        assertArrayEquals(new String[]{"/foo", "/bar"},
-                UrlUtils.prependLeadingSlash(Arrays.asList("foo", "/bar")).toArray());
-
-        final String[] arr = new String[]{"foo", "/bar"};
-        UrlUtils.prependLeadingSlash(arr);
-        assertArrayEquals(new String[]{"/foo", "/bar"}, arr);
+    @Test
+    void testGetStr() {
+        assertEquals("foo", new ConfigUtilsImpl(k -> k).getStr("foo"));
+        assertThrows(IllegalArgumentException.class, () -> new ConfigUtilsImpl(k -> k).getStr(null));
+        assertThrows(IllegalArgumentException.class, () -> new ConfigUtilsImpl(k -> k).getStr(""));
     }
 
 }
