@@ -32,6 +32,13 @@ import java.lang.annotation.Target;
 public @interface Feature {
 
     /**
+     * <p>"name" is used to identify a spi object.</p>
+     * We can identify spi objects through spi configuration file and {@link esa.commons.spi.Feature} annotation,
+     * and {@link esa.commons.spi.Feature} annotation has a higher priority than spi configuration file.
+     */
+    String name() default "";
+
+    /**
      * <p>"groups" is used for filtering the extensions which belong to the same group.</p>
      * When getting extensions annotated by @Feature for specific expectation, "group" can be a choice to get a series
      * of extensions annotated by the same group name.

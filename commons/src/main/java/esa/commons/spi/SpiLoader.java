@@ -53,7 +53,9 @@ public class SpiLoader<T> {
     private static final String SERVICE_DIRECTORY = "META-INF/services/";
 
     /**
-     * Whether to allow circular dependencies, not allowed by default.
+     * <p>Whether to allow circular dependencies, not allowed by default.</p>
+     * <p>Can be set by environment variables allow.circular.references and vm options -Dallow.circular.references</p>
+     * <p>Environment variables have higher priority than vm options</p>
      */
     private static final boolean ALLOW_CYCLE;
 
@@ -490,6 +492,9 @@ public class SpiLoader<T> {
         }
         // Save the creation information for use by the construction method
         ExtensionPair extensionPair = new ExtensionPair(name, extensionClass);
+        if (EXTENSIONS_CACHE.containsKey(extensionPair)) {
+            return (T) EXTENSIONS_CACHE.get(extensionPair);
+        }
         IN_CREATION_CHECK_EXCLUSIONS.add(extensionPair);
         try {
             T instance = null;
@@ -501,12 +506,15 @@ public class SpiLoader<T> {
                 if (constructor.isAnnotationPresent(Inject.class)) {
                     // The Inject annotation of constructor must set the name attribute
                     // and multiple names are separated by commas
-                    String[] parameterNames = constructor.getDeclaredAnnotation(Inject.class).name().split(",");
+                    String[] parameterNames = constructor.getDeclaredAnnotation(Inject.class)
+                            .name()
+                            .replaceAll("\\s*", "")
+                            .split(",");
                     Class<?>[] parameterTypes = constructor.getParameterTypes();
                     Object[] parameters = new Object[parameterTypes.length];
                     int parameterNameIndex = 0;
                     for (int i = 0; i < parameterTypes.length; i++) {
-                        // String primitive and box of primitive type will be injected by default value
+                        // String and primitive and box of primitive type will be injected by default value
                         Class<?> parameterType = parameterTypes[i];
                         if (parameterType.isPrimitive() || parameterType == String.class) {
                             if (parameterType == String.class) {
@@ -514,10 +522,14 @@ public class SpiLoader<T> {
                             } else {
                                 parameters[i] = ObjectUtils.defaultValue(parameterType);
                             }
-                        } else if (isPrimitiveWrapper(parameterType)) {
+                        } else if (ObjectUtils.isPrimitiveWrapper(parameterType)) {
                             parameters[i] = ObjectUtils.wrapperDefaultValue(parameterType);
                         } else {
                             // Other types will be obtained from ExtensionFactory
+                            if (parameterNameIndex == parameterNames.length) {
+                                throw new RuntimeException("The name attribute in the Inject comment is incorrectly " +
+                                        "configured, please check.");
+                            }
                             ExtensionPair pair = new ExtensionPair(parameterNames[parameterNameIndex++], parameterType);
                             parameters[i] = getExtension(pair);
                         }
@@ -545,14 +557,6 @@ public class SpiLoader<T> {
             // Remove the creation information and cache of object that newly created but not yet initialized
             IN_CREATION_CHECK_EXCLUSIONS.remove(extensionPair);
             EARLY_EXTENSION_OBJECTS.remove(extensionPair);
-        }
-    }
-
-    private boolean isPrimitiveWrapper(Class<?> clz) {
-        try {
-            return ((Class<?>) clz.getField("TYPE").get(null)).isPrimitive();
-        } catch (Exception e) {
-            return false;
         }
     }
 
@@ -639,25 +643,20 @@ public class SpiLoader<T> {
     private Object getExtension(ExtensionPair pair) {
         Object extension = EXTENSIONS_CACHE.get(pair);
         if (extension == null) {
-            synchronized (EXTENSIONS_CACHE) {
-                extension = EXTENSIONS_CACHE.get(pair);
-                if (extension == null) {
-                    extension = EARLY_EXTENSION_OBJECTS.get(pair);
-                    if (extension == null) {
-                        if (IN_CREATION_CHECK_EXCLUSIONS.contains(pair)) {
-                            if (ALLOW_CYCLE) {
-                                return null;
-                            } else {
-                                throw new RuntimeException("The dependencies of some of the beans in the application " +
-                                        "context form a cycle, one of the bean is " + pair.getName() +
-                                        ", As a last resort, it may be possible to break the cycle automatically " +
-                                        "by setting env allow.circular.references to true or " +
-                                        "setting VM options -Dallow.circular.references to true.");
-                            }
-                        } else {
-                            extension = getExtensionByName(pair.getExtensionType(), pair.getName());
-                        }
+            extension = EARLY_EXTENSION_OBJECTS.get(pair);
+            if (extension == null) {
+                if (IN_CREATION_CHECK_EXCLUSIONS.contains(pair)) {
+                    if (ALLOW_CYCLE) {
+                        return null;
+                    } else {
+                        throw new RuntimeException("The dependencies of some of the beans in the application " +
+                                "context form a cycle, one of the bean is " + pair.getName() +
+                                ", As a last resort, it may be possible to break the cycle automatically " +
+                                "by setting env allow.circular.references to true or " +
+                                "setting VM options -Dallow.circular.references to true.");
                     }
+                } else {
+                    extension = getExtensionByName(pair.getExtensionType(), pair.getName());
                 }
             }
         }
@@ -743,18 +742,6 @@ public class SpiLoader<T> {
                         name = line;
                     }
                     if (line.length() > 0) {
-                        Class<? extends T> oldClass = extensionClasses.get(name);
-                        if (oldClass != null) {
-                            if (!line.equals(oldClass.getName())) {
-                                String errMsg = String.format("Different SPI extensions(%s and %s) of %s " +
-                                        "has same name:%s", oldClass.getName(), line, type.getName(), name);
-                                LOGGER.error(errMsg);
-                                throw new IllegalStateException(errMsg);
-                            }
-                            LOGGER.warn("Different SPI extensions with same name({}) and class({}) loaded, " +
-                                    "the one loaded from ({}) is ignored!", name, line, resource.toString());
-                            continue;
-                        }
                         final Class<?> clazz;
                         try {
                             clazz = Class.forName(line, false, classLoader);
@@ -769,6 +756,24 @@ public class SpiLoader<T> {
                         }
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug("Class " + clazz.getName() + " is loaded from " + resource.getPath());
+                        }
+                        if (clazz.isAnnotationPresent(Feature.class)) {
+                            Feature feature = clazz.getAnnotation(Feature.class);
+                            if (StringUtils.isNotEmpty(feature.name())) {
+                                name = feature.name();
+                            }
+                        }
+                        Class<? extends T> oldClass = extensionClasses.get(name);
+                        if (oldClass != null) {
+                            if (!line.equals(oldClass.getName())) {
+                                String errMsg = String.format("Different SPI extensions(%s and %s) of %s " +
+                                        "has same name:%s", oldClass.getName(), line, type.getName(), name);
+                                LOGGER.error(errMsg);
+                                throw new IllegalStateException(errMsg);
+                            }
+                            LOGGER.warn("Different SPI extensions with same name({}) and class({}) loaded, " +
+                                    "the one loaded from ({}) is ignored!", name, line, resource.toString());
+                            continue;
                         }
                         putInCache(name, (Class<? extends T>) clazz);
                     }
