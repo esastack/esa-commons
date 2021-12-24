@@ -15,7 +15,6 @@
  */
 package esa.commons;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -24,12 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ObjectUtilsTest {
 
@@ -39,7 +33,6 @@ class ObjectUtilsTest {
         assertNull(ObjectUtils.defaultValue(Object.class));
         assertNull(ObjectUtils.defaultValue(null));
         assertNull(ObjectUtils.defaultValue(int[].class));
-        assertNull(ObjectUtils.wrapperDefaultValue(String.class));
 
         assertEquals((byte) 0, ObjectUtils.defaultValue(byte.class));
         assertEquals((short) 0, ObjectUtils.defaultValue(short.class));
@@ -49,29 +42,6 @@ class ObjectUtilsTest {
         assertEquals(0D, ObjectUtils.defaultValue(double.class));
         assertEquals('\u0000', ObjectUtils.defaultValue(char.class));
         assertEquals(false, ObjectUtils.defaultValue(boolean.class));
-
-        assertEquals((byte) 0, ObjectUtils.wrapperDefaultValue(Byte.class));
-        assertEquals((short) 0, ObjectUtils.wrapperDefaultValue(Short.class));
-        assertEquals(0, ObjectUtils.wrapperDefaultValue(Integer.class));
-        assertEquals(0L, ObjectUtils.wrapperDefaultValue(Long.class));
-        assertEquals(0f, ObjectUtils.wrapperDefaultValue(Float.class));
-        assertEquals(0D, ObjectUtils.wrapperDefaultValue(Double.class));
-        assertEquals('\u0000', ObjectUtils.wrapperDefaultValue(Character.class));
-        assertEquals(false, ObjectUtils.wrapperDefaultValue(Boolean.class));
-    }
-
-    @Test
-    void testIsPrimitiveWrapper() {
-        assertFalse(ObjectUtils.isPrimitiveWrapper(String.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Byte.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Short.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Character.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Boolean.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Integer.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Long.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Float.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Double.class));
-        assertTrue(ObjectUtils.isPrimitiveWrapper(Void.class));
     }
 
     @Test

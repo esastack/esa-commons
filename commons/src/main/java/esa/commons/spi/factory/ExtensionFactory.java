@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 OPPO ESA Stack Project
+ * Copyright 2021 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@ package esa.commons.spi.factory;
 
 import esa.commons.spi.SPI;
 
+/**
+ * Used to obtain the objects that need to be injected, which can be extended to obtain objects from Java spi,
+ * esa commons spi or spring, etc.
+ */
 @SPI
 public interface ExtensionFactory {
     <T> T getExtension(Class<T> type, String name);

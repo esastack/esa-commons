@@ -286,7 +286,6 @@ class ConfigUtilsTest {
                 // case insensitive in windows
                 assertEquals(v, util.getStr(k.toUpperCase()));
             }
-            assertEquals(v, util.getStr(k.replace('_', '.')));
         });
         assertNull(util.getStr("io.esastack.configutil.$absent"));
     }

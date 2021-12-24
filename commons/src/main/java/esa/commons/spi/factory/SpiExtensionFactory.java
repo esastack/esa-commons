@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 OPPO ESA Stack Project
+ * Copyright 2021 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import esa.commons.spi.SpiLoader;
 
 import java.util.Optional;
 
+/**
+ * Obtain objects through commons spi
+ */
 public class SpiExtensionFactory implements ExtensionFactory {
 
     @Override

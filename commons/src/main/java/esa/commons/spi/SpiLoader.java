@@ -17,10 +17,13 @@ package esa.commons.spi;
 
 import esa.commons.Checks;
 import esa.commons.ClassUtils;
+import esa.commons.ConfigUtils;
 import esa.commons.ObjectUtils;
+import esa.commons.Primitives;
 import esa.commons.StringUtils;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
+import esa.commons.reflect.ReflectionUtils;
 import esa.commons.spi.factory.ExtensionFactory;
 import esa.commons.spi.factory.Inject;
 
@@ -54,10 +57,13 @@ public class SpiLoader<T> {
 
     /**
      * <p>Whether to allow circular dependencies, not allowed by default.</p>
-     * <p>Can be set by environment variables allow.circular.references and vm options -Dallow.circular.references</p>
+     * <p>Can be set by environment variables io_esastack_spi_allowCircularReferences or
+     * io.esastack.spi.allowCircularReferences and vm options -Dio.esastack.spi.allowCircularReferences</p>
      * <p>Environment variables have higher priority than vm options</p>
      */
     private static final boolean ALLOW_CYCLE;
+
+    private static final String ALLOW_CYCLE_KEY = "io.esastack.spi.allowCircularReferences";
 
     /**
      * Spi loader cached by SPI type
@@ -106,9 +112,9 @@ public class SpiLoader<T> {
     static {
         SpiLoader<ExtensionFactory> loader = SpiLoader.cached(ExtensionFactory.class);
         EXTENSION_FACTORIES = loader.getAll();
-        String allowCycle = System.getenv("allow.circular.references");
+        String allowCycle = ConfigUtils.get().getStr(ALLOW_CYCLE_KEY);
         if (StringUtils.isEmpty(allowCycle)) {
-            ALLOW_CYCLE = Boolean.parseBoolean(System.getProperty("allow.circular.references", "false"));
+            ALLOW_CYCLE = Boolean.parseBoolean(ConfigUtils.get().getStr(ALLOW_CYCLE_KEY, "false"));
         } else {
             ALLOW_CYCLE = Boolean.parseBoolean(allowCycle);
         }
@@ -516,14 +522,12 @@ public class SpiLoader<T> {
                     for (int i = 0; i < parameterTypes.length; i++) {
                         // String and primitive and box of primitive type will be injected by default value
                         Class<?> parameterType = parameterTypes[i];
-                        if (parameterType.isPrimitive() || parameterType == String.class) {
+                        if (Primitives.isPrimitiveOrWraperType(parameterType) || parameterType == String.class) {
                             if (parameterType == String.class) {
                                 parameters[i] = "";
                             } else {
-                                parameters[i] = ObjectUtils.defaultValue(parameterType);
+                                parameters[i] = Primitives.defaultValue(parameterType);
                             }
-                        } else if (ObjectUtils.isPrimitiveWrapper(parameterType)) {
-                            parameters[i] = ObjectUtils.wrapperDefaultValue(parameterType);
                         } else {
                             // Other types will be obtained from ExtensionFactory
                             if (parameterNameIndex == parameterNames.length) {
@@ -605,7 +609,7 @@ public class SpiLoader<T> {
     private T injectExtensionByMethod(T instance) {
         try {
             for (Method method : instance.getClass().getDeclaredMethods()) {
-                if (!isSetter(method) || !method.isAnnotationPresent(Inject.class)) {
+                if (!ReflectionUtils.isSetter(method) || !method.isAnnotationPresent(Inject.class)) {
                     continue;
                 }
 
@@ -652,8 +656,8 @@ public class SpiLoader<T> {
                         throw new RuntimeException("The dependencies of some of the beans in the application " +
                                 "context form a cycle, one of the bean is " + pair.getName() +
                                 ", As a last resort, it may be possible to break the cycle automatically " +
-                                "by setting env allow.circular.references to true or " +
-                                "setting VM options -Dallow.circular.references to true.");
+                                "by setting env " + ALLOW_CYCLE_KEY + " to true or " +
+                                "setting VM options -D" + ALLOW_CYCLE_KEY +" to true.");
                     }
                 } else {
                     extension = getExtensionByName(pair.getExtensionType(), pair.getName());
@@ -661,21 +665,6 @@ public class SpiLoader<T> {
             }
         }
         return extension;
-    }
-
-    /**
-     * return true if and only if:
-     * <p>
-     * 1, public
-     * <p>
-     * 2, name starts with "set"
-     * <p>
-     * 3, only has one parameter
-     */
-    private boolean isSetter(Method method) {
-        return method.getName().startsWith("set")
-                && method.getParameterTypes().length == 1
-                && Modifier.isPublic(method.getModifiers());
     }
 
     /**
@@ -1028,7 +1017,7 @@ public class SpiLoader<T> {
     }
 
     /**
-     * Global cache pair
+     * Global cache pair, to avoid naming conflicts
      */
     private static class ExtensionPair {
         private final String name;
