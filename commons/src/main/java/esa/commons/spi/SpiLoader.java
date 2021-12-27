@@ -1,23 +1,47 @@
-
+/*
+ * Copyright 2020 OPPO ESA Stack Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package esa.commons.spi;
 
 import esa.commons.Checks;
 import esa.commons.ClassUtils;
+import esa.commons.ConfigUtils;
+import esa.commons.Primitives;
 import esa.commons.StringUtils;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
+import esa.commons.reflect.ReflectionUtils;
+import esa.commons.spi.factory.ExtensionFactory;
+import esa.commons.spi.factory.Inject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -41,9 +65,34 @@ public class SpiLoader<T> {
     private static final String SERVICE_DIRECTORY = "META-INF/services/";
 
     /**
+     * <p>Whether to allow circular dependencies, not allowed by default.</p>
+     * <p>Can be set by environment variables io_esastack_spi_allowCircularReferences or
+     * io.esastack.spi.allowCircularReferences and vm options -Dio.esastack.spi.allowCircularReferences</p>
+     * <p>Vm options have higher priority than Environment variables</p>
+     */
+    private static final boolean ALLOW_CYCLE;
+
+    private static final String ALLOW_CYCLE_KEY = "io.esastack.spi.allowCircularReferences";
+
+    /**
      * Spi loader cached by SPI type
      */
     private static final ConcurrentHashMap<Class<?>, SpiLoader<?>> LOADER_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * Cache of extension objects: bean name to bean instance
+     */
+    private static final Map<ExtensionPair, Object> EXTENSIONS_CACHE = new ConcurrentHashMap<>(16);
+
+    /**
+     * Cache of early extension objects: bean name to bean instance.
+     */
+    private static final Map<ExtensionPair, Object> EARLY_EXTENSION_OBJECTS = new ConcurrentHashMap<>(16);
+
+    /**
+     * Names of beans currently excluded from in creation checks.
+     */
+    private static final Set<ExtensionPair> IN_CREATION_CHECK_EXCLUSIONS = new HashSet<>();
 
     /**
      * Spi extension objects cached by name (All extensions has already wrapped by all the wrappers)
@@ -66,6 +115,24 @@ public class SpiLoader<T> {
     private final Set<FeatureInfo> featuresCache = new TreeSet<>();
     private final Class<T> type;
     private final String defaultExtension;
+
+    private static final List<ExtensionFactory> EXTENSION_FACTORIES;
+
+    static {
+        SpiLoader<ExtensionFactory> loader = SpiLoader.cached(ExtensionFactory.class);
+        EXTENSION_FACTORIES = loader.getAll();
+        ALLOW_CYCLE = ConfigUtils.get().getBool(ALLOW_CYCLE_KEY, false);
+    }
+
+    private static <T> T getExtensionByName(Class<T> type, String name) {
+        for (ExtensionFactory factory : EXTENSION_FACTORIES) {
+            T extension = factory.getExtension(type, name);
+            if (extension != null) {
+                return extension;
+            }
+        }
+        return null;
+    }
 
     private SpiLoader(Class<T> type) {
         this.type = type;
@@ -427,20 +494,191 @@ public class SpiLoader<T> {
     /**
      * Create a new extension instance.
      */
+    @SuppressWarnings("unchecked")
     private T newExtension(String name) {
         Class<? extends T> extensionClass = extensionClasses.get(name);
         if (extensionClass == null) {
             return null;
         }
+        // Save the creation information for use by the construction method
+        ExtensionPair extensionPair = new ExtensionPair(name, extensionClass);
+        if (EXTENSIONS_CACHE.containsKey(extensionPair)) {
+            return (T) EXTENSIONS_CACHE.get(extensionPair);
+        }
+        IN_CREATION_CHECK_EXCLUSIONS.add(extensionPair);
         try {
-            T instance = extensionClass.newInstance();
-            for (WrapperClassInfo<?> wrapperClassInfo : wrapperClasses) {
-                instance = (T) wrapperClassInfo.getClazz().getConstructor(type).newInstance(instance);
+            T instance = null;
+            Constructor<?>[] declaredConstructors = extensionClass.getDeclaredConstructors();
+            // Inject extension in the constructor
+            for (Constructor<?> constructor : declaredConstructors) {
+                // Only constructor with Inject annotation will be used to inject extension
+                // and only one constructor will used
+                if (constructor.isAnnotationPresent(Inject.class)) {
+                    // The Inject annotation of constructor must set the name attribute
+                    // and multiple names are separated by commas
+                    String[] parameterNames = constructor.getDeclaredAnnotation(Inject.class)
+                            .name()
+                            .replaceAll("\\s*", "")
+                            .split(",");
+                    Class<?>[] parameterTypes = constructor.getParameterTypes();
+                    Object[] parameters = new Object[parameterTypes.length];
+                    int parameterNameIndex = 0;
+                    for (int i = 0; i < parameterTypes.length; i++) {
+                        // String and primitive and box of primitive type will be injected by default value
+                        Class<?> parameterType = parameterTypes[i];
+                        if (Primitives.isPrimitiveOrWraperType(parameterType) || parameterType == String.class) {
+                            if (parameterType == String.class) {
+                                parameters[i] = "";
+                            } else {
+                                parameters[i] = Primitives.defaultValue(parameterType);
+                            }
+                        } else {
+                            // Other types will be obtained from ExtensionFactory
+                            if (parameterNameIndex == parameterNames.length) {
+                                throw new RuntimeException("The name attribute in the Inject comment is incorrectly " +
+                                        "configured, please check.");
+                            }
+                            ExtensionPair pair = new ExtensionPair(parameterNames[parameterNameIndex++], parameterType);
+                            parameters[i] = getExtension(pair);
+                        }
+                    }
+                    instance = (T) constructor.newInstance(parameters);
+                }
             }
+            if (instance == null) {
+                instance = extensionClass.newInstance();
+            }
+            // Cache the object that newly created but not yet initialized
+            EARLY_EXTENSION_OBJECTS.put(extensionPair, instance);
+
+            // inject object
+            injectExtension(instance);
+            for (WrapperClassInfo<?> wrapperClassInfo : wrapperClasses) {
+                instance = injectExtension((T) wrapperClassInfo.getClazz().getConstructor(type).newInstance(instance));
+            }
+            // Cache initialized objects
+            EXTENSIONS_CACHE.put(extensionPair, instance);
             return instance;
         } catch (Throwable t) {
             throw new IllegalStateException("Extension instance of class (" + type + ") couldn't be instantiated", t);
+        } finally {
+            // Remove the creation information and cache of object that newly created but not yet initialized
+            IN_CREATION_CHECK_EXCLUSIONS.remove(extensionPair);
+            EARLY_EXTENSION_OBJECTS.remove(extensionPair);
         }
+    }
+
+    private T injectExtension(T instance) {
+        return injectExtensionByMethod(injectExtensionByFiled(instance));
+    }
+
+    private T injectExtensionByFiled(T instance) {
+        try {
+            for (Field field : instance.getClass().getDeclaredFields()) {
+                if (!field.isAnnotationPresent(Inject.class)) {
+                    continue;
+                }
+                Class<?> type = field.getType();
+                if (type.isPrimitive()) {
+                    continue;
+                }
+                try {
+                    String name = field.getAnnotation(Inject.class).name();
+                    if (StringUtils.isEmpty(name)) {
+                        name = field.getName();
+                    }
+                    Object extension = getExtension(new ExtensionPair(name, type));
+                    if (extension != null) {
+                        field.setAccessible(true);
+                        field.set(instance, extension);
+                    } else {
+                        if (field.getAnnotation(Inject.class).require()) {
+                            throw new RuntimeException("Failed to get dependence of " + field.getName() +
+                                    " in " + type.getName());
+                        } else {
+                            LOGGER.warn("Failed to get dependence of " + field.getName() + " in " + type.getName());
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Failed to inject extension via field {} of interface {}: {}",
+                            field.getName(), type.getName(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to inject extension: {}", e);
+        }
+        return instance;
+    }
+
+    private T injectExtensionByMethod(T instance) {
+        try {
+            for (Method method : instance.getClass().getDeclaredMethods()) {
+                if (!ReflectionUtils.isSetter(method) || !method.isAnnotationPresent(Inject.class)) {
+                    continue;
+                }
+
+                Class<?> type = method.getParameterTypes()[0];
+                if (type.isPrimitive()) {
+                    continue;
+                }
+                try {
+                    String name = method.getAnnotation(Inject.class).name();
+                    if (StringUtils.isEmpty(name)) {
+                        name = getSetterProperty(method);
+                    }
+                    Object extension = getExtension(new ExtensionPair(name, type));
+                    if (extension != null) {
+                        method.invoke(instance, extension);
+                    } else {
+                        if (method.getAnnotation(Inject.class).require()) {
+                            throw new RuntimeException("Failed to get dependence of " + name +
+                                    " in " + type.getName());
+                        } else {
+                            LOGGER.warn("Failed to get dependence of " + name + " in " + type.getName());
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Failed to inject extension via method {} of interface {}: {}",
+                            method.getName(), type.getName(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to inject extension: {}", e);
+        }
+        return instance;
+    }
+
+    private Object getExtension(ExtensionPair pair) {
+        Object extension = EXTENSIONS_CACHE.get(pair);
+        if (extension == null) {
+            extension = EARLY_EXTENSION_OBJECTS.get(pair);
+            if (extension == null) {
+                if (IN_CREATION_CHECK_EXCLUSIONS.contains(pair)) {
+                    if (ALLOW_CYCLE) {
+                        return null;
+                    } else {
+                        throw new RuntimeException("The dependencies of some of the beans in the application " +
+                                "context form a cycle, one of the bean is " + pair.getName() +
+                                ", As a last resort, it may be possible to break the cycle automatically " +
+                                "by setting env " + ALLOW_CYCLE_KEY + " to true or " +
+                                "setting VM options -D" + ALLOW_CYCLE_KEY + " to true.");
+                    }
+                } else {
+                    extension = getExtensionByName(pair.getExtensionType(), pair.getName());
+                }
+            }
+        }
+        return extension;
+    }
+
+    /**
+     * get properties name for setter, for instance: setVersion, return "version"
+     * <p>
+     * return "", if setter name with length less than 3
+     */
+    private String getSetterProperty(Method method) {
+        return method.getName().length() > 3
+                ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
     }
 
     /**
@@ -497,18 +735,6 @@ public class SpiLoader<T> {
                         name = line;
                     }
                     if (line.length() > 0) {
-                        Class<? extends T> oldClass = extensionClasses.get(name);
-                        if (oldClass != null) {
-                            if (!line.equals(oldClass.getName())) {
-                                String errMsg = String.format("Different SPI extensions(%s and %s) of %s " +
-                                        "has same name:%s", oldClass.getName(), line, type.getName(), name);
-                                LOGGER.error(errMsg);
-                                throw new IllegalStateException(errMsg);
-                            }
-                            LOGGER.warn("Different SPI extensions with same name({}) and class({}) loaded, " +
-                                    "the one loaded from ({}) is ignored!", name, line, resource.toString());
-                            continue;
-                        }
                         final Class<?> clazz;
                         try {
                             clazz = Class.forName(line, false, classLoader);
@@ -523,6 +749,24 @@ public class SpiLoader<T> {
                         }
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug("Class " + clazz.getName() + " is loaded from " + resource.getPath());
+                        }
+                        if (clazz.isAnnotationPresent(Feature.class)) {
+                            Feature feature = clazz.getAnnotation(Feature.class);
+                            if (StringUtils.isNotEmpty(feature.name())) {
+                                name = feature.name();
+                            }
+                        }
+                        Class<? extends T> oldClass = extensionClasses.get(name);
+                        if (oldClass != null) {
+                            if (!line.equals(oldClass.getName())) {
+                                String errMsg = String.format("Different SPI extensions(%s and %s) of %s " +
+                                        "has same name:%s", oldClass.getName(), line, type.getName(), name);
+                                LOGGER.error(errMsg);
+                                throw new IllegalStateException(errMsg);
+                            }
+                            LOGGER.warn("Different SPI extensions with same name({}) and class({}) loaded, " +
+                                    "the one loaded from ({}) is ignored!", name, line, resource.toString());
+                            continue;
                         }
                         putInCache(name, (Class<? extends T>) clazz);
                     }
@@ -773,6 +1017,45 @@ public class SpiLoader<T> {
         @Override
         public int hashCode() {
             return this.clazz.hashCode();
+        }
+    }
+
+    /**
+     * Global cache pair, to avoid naming conflicts
+     */
+    private static class ExtensionPair {
+        private final String name;
+        private final Class<?> extensionType;
+
+        public ExtensionPair(String name, Class<?> extensionType) {
+            this.name = name;
+            this.extensionType = extensionType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Class<?> getExtensionType() {
+            return extensionType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ExtensionPair that = (ExtensionPair) o;
+            return Objects.equals(name, that.name) &&
+                    Objects.equals(extensionType, that.extensionType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, extensionType);
         }
     }
 }

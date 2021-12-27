@@ -1,0 +1,2 @@
+bean1=esa.commons.spi.extensionloader.inject.ConstructorInjectBean1
+bean2=esa.commons.spi.extensionloader.inject.ConstructorInjectBean2
