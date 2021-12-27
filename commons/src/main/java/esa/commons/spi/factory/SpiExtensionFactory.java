@@ -15,6 +15,7 @@
  */
 package esa.commons.spi.factory;
 
+import esa.commons.spi.Feature;
 import esa.commons.spi.SPI;
 import esa.commons.spi.SpiLoader;
 
@@ -23,6 +24,7 @@ import java.util.Optional;
 /**
  * Obtain objects through commons spi
  */
+@Feature(name = "spi")
 public class SpiExtensionFactory implements ExtensionFactory {
 
     @Override
