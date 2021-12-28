@@ -610,6 +610,7 @@ public class SpiLoader<T> {
                     if (e instanceof NonExtensionException) {
                         throw e;
                     }
+
                     LOGGER.error("Failed to inject extension via field {} of interface {}: {}",
                             field.getName(), type.getName(), e);
                 }
@@ -618,6 +619,7 @@ public class SpiLoader<T> {
             if (e instanceof NonExtensionException) {
                 throw e;
             }
+
             LOGGER.error("Failed to inject extension: {}", e);
         }
         return instance;
