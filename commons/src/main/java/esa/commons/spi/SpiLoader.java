@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 OPPO ESA Stack Project
+ * Copyright 2020 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import esa.commons.logging.LoggerFactory;
 import esa.commons.reflect.ReflectionUtils;
 import esa.commons.spi.factory.ExtensionFactory;
 import esa.commons.spi.factory.Inject;
-import esa.commons.spi.factory.NonExtensionException;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -570,18 +569,20 @@ public class SpiLoader<T> {
         }
     }
 
-    private T injectExtension(T instance) throws ReflectiveOperationException, NonExtensionException {
+    private T injectExtension(T instance) {
         return injectExtensionByMethod(injectExtensionByFiled(instance));
     }
 
     /**
-     * Actually Only {@link esa.commons.spi.factory.NonExtensionException} can be thrown while require of inject is
-     * true. Otherwise we will only record the exception in the log and the object that needs to be
-     * injected is set to null.
+     * {@link java.lang.RuntimeException} will be thrown while require of  {@link esa.commons.spi.factory.Inject}
+     * is true. Otherwise we will only record the exception in the log and the object that needs to be injected
+     * is set to null.
      */
-    private T injectExtensionByFiled(T instance) throws IllegalAccessException, NonExtensionException {
+    private T injectExtensionByFiled(T instance) {
+        Field field = null;
         try {
-            for (Field field : instance.getClass().getDeclaredFields()) {
+            for (Field declaredField : instance.getClass().getDeclaredFields()) {
+                field = declaredField;
                 if (!field.isAnnotationPresent(Inject.class)) {
                     continue;
                 }
@@ -589,48 +590,40 @@ public class SpiLoader<T> {
                 if (type.isPrimitive()) {
                     continue;
                 }
-                try {
-                    String name = field.getAnnotation(Inject.class).name();
-                    if (StringUtils.isEmpty(name)) {
-                        name = field.getName();
-                    }
-                    Object extension = getExtension(new ExtensionPair(name, type));
-                    if (extension != null) {
-                        field.setAccessible(true);
-                        field.set(instance, extension);
+                String name = field.getAnnotation(Inject.class).name();
+                if (StringUtils.isEmpty(name)) {
+                    name = field.getName();
+                }
+                Object extension = getExtension(new ExtensionPair(name, type));
+                if (extension != null) {
+                    field.setAccessible(true);
+                    field.set(instance, extension);
+                } else {
+                    if (field.getAnnotation(Inject.class).require()) {
+                        throw new RuntimeException("Failed to get dependence of " + field.getName() +
+                                " in " + type.getName());
                     } else {
-                        if (field.getAnnotation(Inject.class).require()) {
-                            throw new NonExtensionException("Failed to get dependence of " + field.getName() +
-                                    " in " + type.getName());
-                        } else {
-                            LOGGER.warn("Failed to get dependence of " + field.getName() + " in " + type.getName());
-                        }
+                        LOGGER.warn("Failed to get dependence of " + field.getName() + " in " + type.getName());
                     }
-                } catch (Exception e) {
-                    if (e instanceof NonExtensionException) {
-                        throw e;
-                    }
-                    LOGGER.error("Failed to inject extension via field {} of interface {}: {}",
-                            field.getName(), type.getName(), e);
                 }
             }
-        } catch (Exception e) {
-            if (e instanceof NonExtensionException) {
-                throw e;
-            }
-            LOGGER.error("Failed to inject extension: {}", e);
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Failed to inject extension via field {} of interface {}: {}", field.getName(),
+                    type.getName(), e);
         }
         return instance;
     }
 
     /**
-     * Actually Only {@link esa.commons.spi.factory.NonExtensionException} can be thrown while require of inject is
-     * true. Otherwise we will only record the exception in the log and the object that needs to be
-     * injected is set to null.
+     * {@link java.lang.RuntimeException} will be thrown while require of  {@link esa.commons.spi.factory.Inject}
+     * is true. Otherwise we will only record the exception in the log and the object that needs to be injected
+     * is set to null.
      */
-    private T injectExtensionByMethod(T instance) throws ReflectiveOperationException, NonExtensionException {
+    private T injectExtensionByMethod(T instance) {
+        Method method = null;
         try {
-            for (Method method : instance.getClass().getDeclaredMethods()) {
+            for (Method declaredMethod : instance.getClass().getDeclaredMethods()) {
+                method = declaredMethod;
                 if (!ReflectionUtils.isSetter(method) || !method.isAnnotationPresent(Inject.class)) {
                     continue;
                 }
@@ -639,35 +632,24 @@ public class SpiLoader<T> {
                 if (type.isPrimitive()) {
                     continue;
                 }
-                try {
-                    String name = method.getAnnotation(Inject.class).name();
-                    if (StringUtils.isEmpty(name)) {
-                        name = getSetterProperty(method);
-                    }
-                    Object extension = getExtension(new ExtensionPair(name, type));
-                    if (extension != null) {
-                        method.invoke(instance, extension);
+                String name = method.getAnnotation(Inject.class).name();
+                if (StringUtils.isEmpty(name)) {
+                    name = getSetterProperty(method);
+                }
+                Object extension = getExtension(new ExtensionPair(name, type));
+                if (extension != null) {
+                    method.invoke(instance, extension);
+                } else {
+                    if (method.getAnnotation(Inject.class).require()) {
+                        throw new RuntimeException("Failed to get dependence of " + name + " in " + type.getName());
                     } else {
-                        if (method.getAnnotation(Inject.class).require()) {
-                            throw new NonExtensionException("Failed to get dependence of " + name +
-                                    " in " + type.getName());
-                        } else {
-                            LOGGER.warn("Failed to get dependence of " + name + " in " + type.getName());
-                        }
+                        LOGGER.warn("Failed to get dependence of " + name + " in " + type.getName());
                     }
-                } catch (Exception e) {
-                    if (e instanceof NonExtensionException) {
-                        throw e;
-                    }
-                    LOGGER.error("Failed to inject extension via method {} of interface {}: {}",
-                            method.getName(), type.getName(), e);
                 }
             }
-        } catch (Exception e) {
-            if (e instanceof NonExtensionException) {
-                throw e;
-            }
-            LOGGER.error("Failed to inject extension: {}", e);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            LOGGER.error("Failed to inject extension via method {} of interface {}: {}", method.getName(),
+                    type.getName(), e);
         }
         return instance;
     }

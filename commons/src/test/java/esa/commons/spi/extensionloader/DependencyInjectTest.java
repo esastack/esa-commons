@@ -21,12 +21,14 @@ import esa.commons.spi.extensionloader.inject.ConstructorInjectCycleBean;
 import esa.commons.spi.extensionloader.inject.FiledInjectBean;
 import esa.commons.spi.extensionloader.inject.NonInjectBean;
 import esa.commons.spi.extensionloader.inject.SetMethodInjectBean;
-import esa.commons.spi.factory.NonExtensionException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DependencyInjectTest {
 
@@ -84,16 +86,5 @@ public class DependencyInjectTest {
         assertNotNull(cached);
         assertThrows(IllegalStateException.class, () -> cached.getByName("bean1"));
         assertNotNull(cached.getByName("bean2"));
-    }
-
-    @Test
-    void testNonExtensionException() {
-        Exception root = new RuntimeException();
-        NonExtensionException exception = new NonExtensionException(root);
-        assertEquals(root, exception.getCause());
-
-        NonExtensionException exceptionWithText = new NonExtensionException("test", root);
-        assertEquals("test", exceptionWithText.getMessage());
-        assertEquals(root, exceptionWithText.getCause());
     }
 }
