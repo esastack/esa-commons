@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 OPPO ESA Stack Project
+ * Copyright 2021 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,13 @@ import esa.commons.logging.LoggerFactory;
 import esa.commons.reflect.ReflectionUtils;
 import esa.commons.spi.factory.ExtensionFactory;
 import esa.commons.spi.factory.Inject;
+import esa.commons.spi.factory.NonExtensionException;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -568,11 +570,16 @@ public class SpiLoader<T> {
         }
     }
 
-    private T injectExtension(T instance) {
+    private T injectExtension(T instance) throws ReflectiveOperationException, NonExtensionException {
         return injectExtensionByMethod(injectExtensionByFiled(instance));
     }
 
-    private T injectExtensionByFiled(T instance) {
+    /**
+     * Actually Only {@link esa.commons.spi.factory.NonExtensionException} can be thrown while require of inject is
+     * true. Otherwise we will only record the exception in the log and the object that needs to be
+     * injected is set to null.
+     */
+    private T injectExtensionByFiled(T instance) throws IllegalAccessException, NonExtensionException {
         try {
             for (Field field : instance.getClass().getDeclaredFields()) {
                 if (!field.isAnnotationPresent(Inject.class)) {
@@ -593,24 +600,35 @@ public class SpiLoader<T> {
                         field.set(instance, extension);
                     } else {
                         if (field.getAnnotation(Inject.class).require()) {
-                            throw new RuntimeException("Failed to get dependence of " + field.getName() +
+                            throw new NonExtensionException("Failed to get dependence of " + field.getName() +
                                     " in " + type.getName());
                         } else {
                             LOGGER.warn("Failed to get dependence of " + field.getName() + " in " + type.getName());
                         }
                     }
                 } catch (Exception e) {
+                    if (e instanceof NonExtensionException) {
+                        throw e;
+                    }
                     LOGGER.error("Failed to inject extension via field {} of interface {}: {}",
                             field.getName(), type.getName(), e);
                 }
             }
         } catch (Exception e) {
+            if (e instanceof NonExtensionException) {
+                throw e;
+            }
             LOGGER.error("Failed to inject extension: {}", e);
         }
         return instance;
     }
 
-    private T injectExtensionByMethod(T instance) {
+    /**
+     * Actually Only {@link esa.commons.spi.factory.NonExtensionException} can be thrown while require of inject is
+     * true. Otherwise we will only record the exception in the log and the object that needs to be
+     * injected is set to null.
+     */
+    private T injectExtensionByMethod(T instance) throws ReflectiveOperationException, NonExtensionException {
         try {
             for (Method method : instance.getClass().getDeclaredMethods()) {
                 if (!ReflectionUtils.isSetter(method) || !method.isAnnotationPresent(Inject.class)) {
@@ -631,18 +649,24 @@ public class SpiLoader<T> {
                         method.invoke(instance, extension);
                     } else {
                         if (method.getAnnotation(Inject.class).require()) {
-                            throw new RuntimeException("Failed to get dependence of " + name +
+                            throw new NonExtensionException("Failed to get dependence of " + name +
                                     " in " + type.getName());
                         } else {
                             LOGGER.warn("Failed to get dependence of " + name + " in " + type.getName());
                         }
                     }
                 } catch (Exception e) {
+                    if (e instanceof NonExtensionException) {
+                        throw e;
+                    }
                     LOGGER.error("Failed to inject extension via method {} of interface {}: {}",
                             method.getName(), type.getName(), e);
                 }
             }
         } catch (Exception e) {
+            if (e instanceof NonExtensionException) {
+                throw e;
+            }
             LOGGER.error("Failed to inject extension: {}", e);
         }
         return instance;
@@ -878,8 +902,9 @@ public class SpiLoader<T> {
 
     /**
      * Feature info class
+     * <p>Package access for unit test</p>
      */
-    private static class FeatureInfo implements Comparable<FeatureInfo> {
+    static class FeatureInfo implements Comparable<FeatureInfo> {
 
         final String name;
         final String[] groups;
@@ -967,9 +992,10 @@ public class SpiLoader<T> {
 
     /**
      * Wrapper info class
+     * <p>Package access for unit test</p>
      */
     @SuppressWarnings("unchecked")
-    private static class WrapperClassInfo<T> implements Comparable<WrapperClassInfo<T>> {
+    static class WrapperClassInfo<T> implements Comparable<WrapperClassInfo<T>> {
 
         final Class<? extends T> clazz;
         final int order;
@@ -1022,8 +1048,9 @@ public class SpiLoader<T> {
 
     /**
      * Global cache pair, to avoid naming conflicts
+     * <p>Package access for unit test</p>
      */
-    private static class ExtensionPair {
+    static class ExtensionPair {
         private final String name;
         private final Class<?> extensionType;
 

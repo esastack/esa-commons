@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 OPPO ESA Stack Project
+ * Copyright 2021 OPPO ESA Stack Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import esa.commons.spi.SpiLoader;
 import esa.commons.spi.extensionloader.inject.ConstructorInjectBean;
 import esa.commons.spi.extensionloader.inject.ConstructorInjectCycleBean;
 import esa.commons.spi.extensionloader.inject.FiledInjectBean;
+import esa.commons.spi.extensionloader.inject.NonInjectBean;
 import esa.commons.spi.extensionloader.inject.SetMethodInjectBean;
+import esa.commons.spi.factory.NonExtensionException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -74,5 +76,24 @@ public class DependencyInjectTest {
         SpiLoader<ConstructorInjectCycleBean> cached = SpiLoader.cached(ConstructorInjectCycleBean.class);
         assertNotNull(cached);
         assertThrows(IllegalStateException.class, () -> cached.getByName("bean1"));
+    }
+
+    @Test
+    void testNonException() {
+        SpiLoader<NonInjectBean> cached = SpiLoader.cached(NonInjectBean.class);
+        assertNotNull(cached);
+        assertThrows(IllegalStateException.class, () -> cached.getByName("bean1"));
+        assertNotNull(cached.getByName("bean2"));
+    }
+
+    @Test
+    void testNonExtensionException() {
+        Exception root = new RuntimeException();
+        NonExtensionException exception = new NonExtensionException(root);
+        assertEquals(root, exception.getCause());
+
+        NonExtensionException exceptionWithText = new NonExtensionException("test", root);
+        assertEquals("test", exceptionWithText.getMessage());
+        assertEquals(root, exceptionWithText.getCause());
     }
 }
