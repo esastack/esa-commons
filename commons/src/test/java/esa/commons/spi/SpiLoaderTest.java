@@ -15,7 +15,7 @@
  */
 package esa.commons.spi;
 
-import esa.commons.spi.extensionloader.feature.FeatureBean;
+import esa.commons.spi.feature.FeatureBean;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

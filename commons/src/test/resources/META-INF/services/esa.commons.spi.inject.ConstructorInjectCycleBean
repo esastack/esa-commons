@@ -1,0 +1,2 @@
+bean1=esa.commons.spi.inject.ConstructorInjectCycleBean1
+bean2=esa.commons.spi.inject.ConstructorInjectCycleBean2

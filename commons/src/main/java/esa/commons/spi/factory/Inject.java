@@ -37,5 +37,5 @@ public @interface Inject {
      * Whether the injected object is necessary, if it is, then an error will be reported when the object
      * cannot be found, otherwise it will be null when the injected object cannot be found.
      */
-    boolean require() default false;
+    boolean require() default true;
 }

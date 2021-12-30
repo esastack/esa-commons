@@ -1,4 +1,0 @@
-paramExt1 = esa.commons.spi.extensionloader.excludeparam.ParamImpl1
-paramExt2 = esa.commons.spi.extensionloader.excludeparam.ParamImpl2
-excludeParamExt1 = esa.commons.spi.extensionloader.excludeparam.ExcludeParamImpl1
-excludeParamExt2 = esa.commons.spi.extensionloader.excludeparam.ExcludeParamImpl2
