@@ -556,7 +556,7 @@ public class SpiLoader<T> {
                 }
             }
             if (instance == null) {
-                instance = extensionClass.newInstance();
+                instance = extensionClass.getDeclaredConstructor().newInstance();
             }
             // Cache the object that newly created but not yet initialized
             EARLY_EXTENSION_OBJECTS.put(extensionPair, instance);
@@ -668,9 +668,9 @@ public class SpiLoader<T> {
     }
 
     public Object getExtensionInCache(ExtensionPair extensionPair, Map<ExtensionPair, Object> map) {
-        for (ExtensionPair pair : map.keySet()) {
-            if (pair.equals(extensionPair)) {
-                return map.get(pair);
+        for (Map.Entry<ExtensionPair, Object> entry : map.entrySet()) {
+            if (entry.getKey().equals(extensionPair)) {
+                return entry.getValue();
             }
         }
         return null;
