@@ -1,0 +1,4 @@
+paramExt1 = esa.commons.spi.excludeparam.ParamImpl1
+paramExt2 = esa.commons.spi.excludeparam.ParamImpl2
+excludeParamExt1 = esa.commons.spi.excludeparam.ExcludeParamImpl1
+excludeParamExt2 = esa.commons.spi.excludeparam.ExcludeParamImpl2

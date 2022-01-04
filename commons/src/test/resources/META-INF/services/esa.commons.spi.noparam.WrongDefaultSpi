@@ -1,0 +1,2 @@
+wrong = esa.commons.spi.noparam.WrongDefaultSpiImpl
+esa.commons.spi.noparam.WrongDefaultSpiImpl

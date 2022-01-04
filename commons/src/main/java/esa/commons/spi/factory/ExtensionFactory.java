@@ -23,5 +23,15 @@ import esa.commons.spi.SPI;
  */
 @SPI
 public interface ExtensionFactory {
-    <T> T getExtension(Class<T> type, String name);
+    /**
+     * Get extension object based on name and type. When the object cannot be obtained, we must decide whether
+     * to throw an exception according to the required value of {@link esa.commons.spi.factory.Inject}.
+     *
+     * @param type type of extension
+     * @param name name of extension
+     * @param required default true. Means that whether to throw an exception when the extension cannot be found
+     *                 or find more than one
+     * @return extension object
+     */
+    <T> T getExtension(Class<T> type, String name, boolean required);
 }
