@@ -212,7 +212,7 @@ public final class ClassUtils {
      * Finds all methods which are parent of given {@code method} and those are ordered by distance of inheritance.
      *
      * @param method    the current method implementation.
-     * @return  all implemented methods.
+     * @return  all implemented and overridden methods.
      */
     public static List<Method> findImplementedMethods(Method method) {
         Checks.checkNotNull(method, "method");
@@ -227,7 +227,7 @@ public final class ClassUtils {
      *
      * @param method The current method implementation.
      *
-     * @return The optional of implemented method, which is the closest of given methods.
+     * @return The optional of implemented or overridden method, which is the closest of given method.
      */
     public static Optional<Method> findImplementedMethod(Method method) {
         Checks.checkNotNull(method, "method");
@@ -302,7 +302,7 @@ public final class ClassUtils {
      * @param concrete      The target class / interface of the type hierarchy.
      * @param targetRawType A superclass / interface of the type hierarchy.
      *
-     * @return The Mapping for generic types to actual types.
+     * @return The mapping for generic types to actual types.
      */
     private static Map<TypeVariable<?>, Class<?>> extractResolvedTypes(Class<?> concrete,
                                                                        Class<?> targetRawType) {
@@ -327,7 +327,7 @@ public final class ClassUtils {
 
     /**
      * Extracts the {@link TypeVariable}s declared by the generic declaration of given {@code rawType} and
-     * resolve those to actual types which can be got from the given {@code parameterizedType}.
+     * resolves them to actual types which can be got from the given {@code genericRawType}.
      *
      * @param rawType           rawType which have generic declarations.
      * @param genericRawType    generic type which is used to get actual types.
@@ -379,7 +379,8 @@ public final class ClassUtils {
         return null;
     }
 
-    private static Class<?>[] doRetrieveGenericTypes(Type requiredType, Class<?> rawType,
+    private static Class<?>[] doRetrieveGenericTypes(Type requiredType,
+                                                     Class<?> rawType,
                                                      Map<TypeVariable<?>, Type> resolvedTypes) {
         if (requiredType == null) {
             return EMPTY_CLZ_ARR;
