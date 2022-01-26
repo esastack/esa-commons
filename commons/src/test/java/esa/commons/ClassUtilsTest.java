@@ -354,9 +354,9 @@ class ClassUtilsTest {
     }
 
     @Test
-    void testFindImplementedMethods() throws Throwable {
+    void testFindOverriddenMethods() throws Throwable {
         final Method m1 = SubAVVImpl.class.getMethod("toString");
-        List<Method> founds1 = ClassUtils.findImplementedMethods(m1);
+        List<Method> founds1 = ClassUtils.findOverriddenMethods(m1);
         assertEquals(6, founds1.size());
         assertEquals("toString", founds1.get(0).getName());
         assertEquals(AVVImpl.class, founds1.get(0).getDeclaringClass());
@@ -373,7 +373,7 @@ class ClassUtilsTest {
         assertEquals(Object.class, founds1.get(5).getDeclaringClass());
 
         final Method m2 = ASImpl.class.getMethod("getE");
-        List<Method> founds2 = ClassUtils.findImplementedMethods(m2);
+        List<Method> founds2 = ClassUtils.findOverriddenMethods(m2);
         assertEquals(2, founds2.size());
         assertEquals("getE", founds2.get(0).getName());
         assertEquals(AS.class, founds2.get(0).getDeclaringClass());
@@ -382,39 +382,39 @@ class ClassUtilsTest {
     }
 
     @Test
-    void testFindImplementedMethod() throws Throwable {
+    void testFindOverriddenMethod() throws Throwable {
         final Method m1 = AS.class.getMethod("getE");
-        Optional<Method> target1 = ClassUtils.findImplementedMethod(m1);
+        Optional<Method> target1 = ClassUtils.findOverriddenMethod(m1);
         assertTrue(target1.isPresent());
         assertEquals("getE", target1.get().getName());
         assertEquals(S.class, target1.get().getDeclaringClass());
 
         final Method m2 = ASImpl.class.getMethod("getE");
-        Optional<Method> target2 = ClassUtils.findImplementedMethod(m2);
+        Optional<Method> target2 = ClassUtils.findOverriddenMethod(m2);
         assertTrue(target2.isPresent());
         assertEquals("getE", target2.get().getName());
         assertEquals(AS.class, target2.get().getDeclaringClass());
 
         final Method m3 = SSIImpl.class.getMethod("saveAll", Float.class, String.class);
-        Optional<Method> target3 = ClassUtils.findImplementedMethod(m3);
+        Optional<Method> target3 = ClassUtils.findOverriddenMethod(m3);
         assertTrue(target3.isPresent());
         assertEquals("saveAll", target3.get().getName());
         assertEquals(SS.class, target3.get().getDeclaringClass());
 
         final Method m4 = SS.class.getMethod("saveE", Object.class);
-        Optional<Method> target4 = ClassUtils.findImplementedMethod(m4);
+        Optional<Method> target4 = ClassUtils.findOverriddenMethod(m4);
         assertTrue(target4.isPresent());
         assertEquals("saveE", target4.get().getName());
         assertEquals(S.class, target4.get().getDeclaringClass());
 
         final Method m5 = SubAVVImpl.class.getMethod("saveE", Integer.class);
-        Optional<Method> target5 = ClassUtils.findImplementedMethod(m5);
+        Optional<Method> target5 = ClassUtils.findOverriddenMethod(m5);
         assertTrue(target5.isPresent());
         assertEquals("saveE", target5.get().getName());
         assertEquals(V.class, target5.get().getDeclaringClass());
 
         final Method m6 = SubAVVImpl.class.getMethod("saveT", String.class);
-        Optional<Method> target6 = ClassUtils.findImplementedMethod(m6);
+        Optional<Method> target6 = ClassUtils.findOverriddenMethod(m6);
         assertTrue(target6.isPresent());
         assertEquals("saveT", target6.get().getName());
         assertEquals(VV.class, target6.get().getDeclaringClass());

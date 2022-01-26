@@ -209,29 +209,31 @@ public final class ClassUtils {
     }
 
     /**
-     * Finds all methods which are parent of given {@code method} and those are ordered by distance of inheritance.
+     * Finds all methods which are declared in superclass or interfaces of given {@code method}'s declaringClass
+     * recursively and those are ordered by distance of inheritance.
      *
      * @param method    the current method implementation.
      * @return  all implemented and overridden methods.
      */
-    public static List<Method> findImplementedMethods(Method method) {
+    public static List<Method> findOverriddenMethods(Method method) {
         Checks.checkNotNull(method, "method");
         List<Method> methods = new LinkedList<>();
-        findImplementedMethodRecursively(method, method.getDeclaringClass(), false, methods);
+        findOverriddenMethodRecursively(method, method.getDeclaringClass(), false, methods);
         return methods;
     }
 
     /**
-     * Finds the method which is the parent of given {@code method} and may be declared in given {@code target}
-     * interface.
+     * Finds the method which are declared in superclass or interfaces of given {@code method}'s declaringClass
+     * recursively.
      *
      * @param method The current method implementation.
      *
      * @return The optional of implemented or overridden method, which is the closest of given method.
+     * @see #findOverriddenMethods(Method)
      */
-    public static Optional<Method> findImplementedMethod(Method method) {
+    public static Optional<Method> findOverriddenMethod(Method method) {
         Checks.checkNotNull(method, "method");
-        List<Method> founds = findImplementedMethods(method);
+        List<Method> founds = findOverriddenMethods(method);
         if (founds.isEmpty()) {
             return Optional.empty();
         } else {
@@ -239,10 +241,10 @@ public final class ClassUtils {
         }
     }
 
-    private static void findImplementedMethodRecursively(Method method,
-                                                         Class<?> target,
-                                                         boolean findingInTarget,
-                                                         List<Method> hasFounds) {
+    private static void findOverriddenMethodRecursively(Method method,
+                                                        Class<?> target,
+                                                        boolean findingInTarget,
+                                                        List<Method> hasFounds) {
         if (target == null) {
             return;
         }
@@ -250,17 +252,17 @@ public final class ClassUtils {
         // try to get from super class
         // Check if the overridden method exists without generics
         if (findingInTarget) {
-            findImplementedMethod0(target, method).ifPresent(hasFounds::add);
+            findOverriddenMethod0(target, method).ifPresent(hasFounds::add);
         }
 
         // no way but to try to get from interfaces.
         for (Class<?> interface0 : target.getInterfaces()) {
-            findImplementedMethodRecursively(method, interface0, true, hasFounds);
+            findOverriddenMethodRecursively(method, interface0, true, hasFounds);
         }
-        findImplementedMethodRecursively(method, target.getSuperclass(), true, hasFounds);
+        findOverriddenMethodRecursively(method, target.getSuperclass(), true, hasFounds);
     }
 
-    private static Optional<Method> findImplementedMethod0(Class<?> target, Method method) {
+    private static Optional<Method> findOverriddenMethod0(Class<?> target, Method method) {
         try {
             return Optional.of(target.getDeclaredMethod(method.getName(), method.getParameterTypes()));
         } catch (NoSuchMethodException e) {

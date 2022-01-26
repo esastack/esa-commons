@@ -49,8 +49,8 @@ class AnnotationUtilsTest {
 
         assertFalse(AnnotationUtils.hasAnnotation(method, null, true));
         assertFalse(AnnotationUtils.hasAnnotation(method, null, false));
-        assertFalse(AnnotationUtils.hasAnnotation((Method) null, A.class, true));
-        assertFalse(AnnotationUtils.hasAnnotation((Method) null, A.class, false));
+        assertFalse(AnnotationUtils.hasAnnotation(null, A.class, true));
+        assertFalse(AnnotationUtils.hasAnnotation(null, A.class, false));
 
         assertTrue(AnnotationUtils.hasAnnotation(method, A.class, false));
         assertTrue(AnnotationUtils.hasAnnotation(method, B.class, false));
@@ -67,8 +67,8 @@ class AnnotationUtilsTest {
     void testHasAnnotationOfClass() {
         assertFalse(AnnotationUtils.hasAnnotation(S.class, null, true));
         assertFalse(AnnotationUtils.hasAnnotation(S.class, null, false));
-        assertFalse(AnnotationUtils.hasAnnotation((Class<?>) null, A.class, true));
-        assertFalse(AnnotationUtils.hasAnnotation((Class<?>) null, A.class, false));
+        assertFalse(AnnotationUtils.hasAnnotation(null, A.class, true));
+        assertFalse(AnnotationUtils.hasAnnotation(null, A.class, false));
 
         assertFalse(AnnotationUtils.hasAnnotation(Y.class, A.class, false));
         assertFalse(AnnotationUtils.hasAnnotation(Y.class, B.class, false));
