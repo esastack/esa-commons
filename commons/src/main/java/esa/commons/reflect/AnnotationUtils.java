@@ -15,11 +15,11 @@
  */
 package esa.commons.reflect;
 
+import esa.commons.ClassUtils;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,7 +43,24 @@ public final class AnnotationUtils {
         if (element == null || target == null) {
             return false;
         }
-        return findAnnotation(element, target) != null;
+        return hasAnnotation(element, target, false);
+    }
+
+    /**
+     * Checks whether the given annotation is present on the given {@code element}.
+     *
+     * @param element   element to check
+     * @param target    target annotation type
+     * @param recursive whether support to find on {@code target}'s super class or interfaces recursively.
+     * @return  {@code true} if given annotation is present, {@code false} otherwise.
+     */
+    public static boolean hasAnnotation(AnnotatedElement element,
+                                        Class<? extends Annotation> target,
+                                        boolean recursive) {
+        if (element == null || target == null) {
+            return false;
+        }
+        return findAnnotation(element, target, recursive) != null;
     }
 
     /**
@@ -59,15 +76,52 @@ public final class AnnotationUtils {
      */
     public static <A extends Annotation> A findAnyAnnotation(AnnotatedElement element,
                                                              Class<A>[] targets) {
-        if (element == null || targets == null || targets.length == 0) {
+        return findAnyAnnotation(element, targets, false);
+    }
+
+    /**
+     * Finds an annotation from given {@code element} if any type of {@code targets} matches.This method will search
+     * annotations that is annotated on the presenting annotations except the annotations that declared as {@code
+     * java.lang.annotation.Xxx}.
+     *
+     * @param element   element to find from
+     * @param targets   target annotations types
+     * @param recursive recursive whether support to find on {@code target}'s super class or interfaces recursively.
+     * @param <A>     annotation type
+     *
+     * @return first matched annotation or {@code null} if mismatched.
+     */
+    public static <A extends Annotation> A findAnyAnnotation(AnnotatedElement element,
+                                                             Class<A>[] targets,
+                                                             boolean recursive) {
+        if (element == null || targets == null || targets.length == 0 || Object.class.equals(element)) {
             return null;
         }
-        for (Class<A> target : targets) {
-            A found = findAnnotationRecursively(element, target, new HashSet<>());
-            if (found != null) {
+        A found;
+        if ((found = findAnyAnnotationRecursively(element, targets)) != null) {
+            return found;
+        }
+        if (!recursive) {
+            return null;
+        }
+
+        if (element instanceof Class) {
+            if ((found = findAnyAnnotation(((Class<?>) element).getSuperclass(), targets, true)) != null) {
                 return found;
             }
+            for (Class<?> interface0 : ((Class<?>) element).getInterfaces()) {
+                if ((found = findAnyAnnotation(interface0, targets, true)) != null) {
+                    return found;
+                }
+            }
+        } else if (element instanceof Method) {
+            for (Method method : ClassUtils.findOverriddenMethods((Method) element)) {
+                if ((found = findAnyAnnotationRecursively(method, targets)) != null) {
+                    return found;
+                }
+            }
         }
+
         return null;
     }
 
@@ -84,10 +138,64 @@ public final class AnnotationUtils {
      */
     public static <A extends Annotation> A findAnnotation(AnnotatedElement element,
                                                           Class<A> target) {
-        if (element == null || target == null) {
+        return findAnnotation(element, target, false);
+    }
+
+    /**
+     * Finds the annotation from given {@code element} if type of {@code target} matches.This method will search
+     * annotations that is annotated on the presenting annotations except the annotations that declared as {@code
+     * java.lang.annotation.Xxx}.
+     *
+     * @param element    element to find from
+     * @param target     target annotation type
+     * @param recursive  whether support to find on {@code target}'s super class or interfaces recursively.
+     * @param <A>        annotation type
+     *
+     * @return first matched annotation or {@code null} if mismatched.
+     */
+    public static <A extends Annotation> A findAnnotation(AnnotatedElement element,
+                                                          Class<A> target,
+                                                          boolean recursive) {
+        if (target == null || element == null || Object.class.equals(element)) {
             return null;
         }
-        return findAnnotationRecursively(element, target, new HashSet<>());
+
+        A found;
+        if ((found = findAnnotationRecursively(element, target, new HashSet<>())) != null) {
+            return found;
+        }
+        if (!recursive) {
+            return null;
+        }
+
+        if (element instanceof Class) {
+            if ((found = findAnnotation(((Class<?>) element).getSuperclass(), target, true)) != null) {
+                return found;
+            }
+            for (Class<?> interface0 : ((Class<?>) element).getInterfaces()) {
+                if ((found = findAnnotation(interface0, target, true)) != null) {
+                    return found;
+                }
+            }
+        } else if (element instanceof Method) {
+            for (Method method : ClassUtils.findOverriddenMethods((Method) element)) {
+                if ((found = findAnnotationRecursively(method, target, new HashSet<>())) != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static <A extends Annotation> A findAnyAnnotationRecursively(AnnotatedElement element,
+                                                                         Class<A>[] targets) {
+        for (Class<A> target : targets) {
+            A found = findAnnotationRecursively(element, target, new HashSet<>());
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 
     private static <A extends Annotation> A findAnnotationRecursively(AnnotatedElement element,

@@ -18,7 +18,14 @@ package esa.commons;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -116,7 +123,7 @@ public final class ClassUtils {
      * @return {@link Type} of the first type, {@link Object} if could not find a actual {@link Type} such as {@code T}.
      */
     public static Class<?>[] retrieveGenericTypes(Type requiredType) {
-        return doRetrieveGenericTypes(requiredType, null);
+        return doRetrieveGenericTypes(requiredType, null, Collections.emptyMap());
     }
 
     /**
@@ -165,26 +172,35 @@ public final class ClassUtils {
      */
     public static Class<?>[] findGenericTypes(Class<?> concrete,
                                               Class<?> targetRawType) {
-        Checks.checkNotNull(concrete, "concrete");
-        if (Object.class.equals(concrete)) {
+        return findGenericTypes(concrete, null, targetRawType);
+    }
+
+    private static Class<?>[] findGenericTypes(Class<?> concrete,
+                                               Type concreteGenericType,
+                                               Class<?> targetRawType) {
+        if (concrete == null || Object.class.equals(concrete)) {
             return EMPTY_CLZ_ARR;
         }
+
+        Map<TypeVariable<?>, Type> resolvedTypes = buildResolvedTypes(concrete, concreteGenericType);
+
         // from interface
-        Class<?>[] generics = doRetrieveGenericInterfaceTypes(concrete, targetRawType);
+        Class<?>[] generics = doRetrieveGenericInterfaceTypes(concrete, concreteGenericType, targetRawType);
         if (generics != null && generics.length > 0) {
             return generics;
         }
 
         // from super class
         Type genericSuperclass = concrete.getGenericSuperclass();
-        generics = doRetrieveGenericTypes(genericSuperclass, targetRawType);
+        generics = doRetrieveGenericTypes(genericSuperclass, targetRawType, resolvedTypes);
         if (generics != null && generics.length > 0) {
             return generics;
         }
 
         // from interface of super class
         Class<?> supperClass = concrete.getSuperclass();
-        generics = findGenericTypes(supperClass, targetRawType);
+        Type supperGenericClass = concrete.getGenericSuperclass();
+        generics = findGenericTypes(supperClass, supperGenericClass, targetRawType);
 
         if (generics == null || generics.length == 0) {
             return EMPTY_CLZ_ARR;
@@ -192,14 +208,157 @@ public final class ClassUtils {
         return generics;
     }
 
-    private static Class<?>[] doRetrieveGenericInterfaceTypes(Class<?> concrete, Class<?> interfaceType) {
-        if (Object.class.equals(concrete)) {
+    /**
+     * Finds all methods which are declared in superclass or interfaces of given {@code method}'s declaringClass
+     * recursively and those are ordered by distance of inheritance.
+     *
+     * @param method    the current method implementation.
+     * @return  all implemented and overridden methods.
+     */
+    public static List<Method> findOverriddenMethods(Method method) {
+        Checks.checkNotNull(method, "method");
+        List<Method> methods = new LinkedList<>();
+        findOverriddenMethodRecursively(method, method.getDeclaringClass(), false, methods);
+        return methods;
+    }
+
+    /**
+     * Finds the method which are declared in superclass or interfaces of given {@code method}'s declaringClass
+     * recursively.
+     *
+     * @param method The current method implementation.
+     *
+     * @return The optional of implemented or overridden method, which is the closest of given method.
+     * @see #findOverriddenMethods(Method)
+     */
+    public static Optional<Method> findOverriddenMethod(Method method) {
+        Checks.checkNotNull(method, "method");
+        List<Method> founds = findOverriddenMethods(method);
+        if (founds.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(founds.get(0));
+        }
+    }
+
+    private static void findOverriddenMethodRecursively(Method method,
+                                                        Class<?> target,
+                                                        boolean findingInTarget,
+                                                        List<Method> hasFounds) {
+        if (target == null) {
+            return;
+        }
+
+        // try to get from super class
+        // Check if the overridden method exists without generics
+        if (findingInTarget) {
+            findOverriddenMethod0(target, method).ifPresent(hasFounds::add);
+        }
+
+        // no way but to try to get from interfaces.
+        for (Class<?> interface0 : target.getInterfaces()) {
+            findOverriddenMethodRecursively(method, interface0, true, hasFounds);
+        }
+        findOverriddenMethodRecursively(method, target.getSuperclass(), true, hasFounds);
+    }
+
+    private static Optional<Method> findOverriddenMethod0(Class<?> target, Method method) {
+        try {
+            return Optional.of(target.getDeclaredMethod(method.getName(), method.getParameterTypes()));
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+
+        // Check if the overridden method exists with generics
+        Map<TypeVariable<?>, Class<?>> resolvedTypes = extractResolvedTypes(method.getDeclaringClass(),
+                target);
+        for (Method m : target.getDeclaredMethods()) {
+            if (m.isSynthetic()
+                    || !method.getName().equals(m.getName())
+                    || method.getParameterCount() != m.getParameterCount()) {
+                continue;
+            }
+
+            Type[] genericTypes = m.getGenericParameterTypes();
+            final Type[] actualTypes = new Type[genericTypes.length];
+
+            for (int i = 0; i < genericTypes.length; i++) {
+                final Type resolvableType = genericTypes[i];
+                if (resolvableType instanceof TypeVariable<?>) {
+                    actualTypes[i] = resolvedTypes.get(resolvableType);
+                } else {
+                    actualTypes[i] = resolvableType;
+                }
+            }
+
+            if (Arrays.equals(method.getGenericParameterTypes(), actualTypes)) {
+                return Optional.of(m);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Creates a mapping for generic types to actual types between two classes / interfaces of a type hierarchy.
+     *
+     * @param concrete      The target class / interface of the type hierarchy.
+     * @param targetRawType A superclass / interface of the type hierarchy.
+     *
+     * @return The mapping for generic types to actual types.
+     */
+    private static Map<TypeVariable<?>, Class<?>> extractResolvedTypes(Class<?> concrete,
+                                                                       Class<?> targetRawType) {
+        final Class<?>[] types = findGenericTypes(concrete, targetRawType);
+        final TypeVariable<? extends Class<?>>[] typeParams = targetRawType.getTypeParameters();
+
+        final Map<TypeVariable<?>, Class<?>> resolvedTypes = new HashMap<>();
+        if (types != null) {
+            int i = 0;
+            while (i < types.length) {
+                resolvedTypes.put(typeParams[i], types[i]);
+                i++;
+            }
+            while (i < typeParams.length) {
+                resolvedTypes.put(typeParams[i], typeParams[i].getGenericDeclaration());
+                i++;
+            }
+        }
+
+        return resolvedTypes;
+    }
+
+    /**
+     * Extracts the {@link TypeVariable}s declared by the generic declaration of given {@code rawType} and
+     * resolves them to actual types which can be got from the given {@code genericRawType}.
+     *
+     * @param rawType           rawType which have generic declarations.
+     * @param genericRawType    generic type which is used to get actual types.
+     *
+     * @return resolved maps, the mapping for {@link TypeVariable} to {@link Type}.
+     */
+    private static Map<TypeVariable<?>, Type> buildResolvedTypes(Class<?> rawType,
+                                                                 Type genericRawType) {
+        Map<TypeVariable<?>, Type> actualTypes = new HashMap<>();
+        if (genericRawType instanceof ParameterizedType) {
+            TypeVariable<? extends Class<?>>[] vars = rawType.getTypeParameters();
+            for (int i = 0; i < vars.length; i++) {
+                actualTypes.put(vars[i], ((ParameterizedType) genericRawType).getActualTypeArguments()[i]);
+            }
+        }
+        return actualTypes;
+    }
+
+    private static Class<?>[] doRetrieveGenericInterfaceTypes(Class<?> concrete,
+                                                              Type concreteGenericType,
+                                                              Class<?> interfaceType) {
+        if (concrete == null || Object.class.equals(concrete)) {
             return null;
         }
+        Map<TypeVariable<?>, Type> resolvedTypes = buildResolvedTypes(concrete, concreteGenericType);
         Type[] types = concrete.getGenericInterfaces();
-        if (types != null && types.length > 0) {
+        if (types.length > 0) {
             for (Type type : types) {
-                Class<?>[] generics = doRetrieveGenericTypes(type, interfaceType);
+                Class<?>[] generics = doRetrieveGenericTypes(type, interfaceType, resolvedTypes);
                 if (generics.length > 0) {
                     return generics;
                 }
@@ -207,20 +366,27 @@ public final class ClassUtils {
 
             // retrieve from interface
             Class<?>[] superInterfaces = concrete.getInterfaces();
-            if (superInterfaces != null && superInterfaces.length > 0) {
+            if (superInterfaces.length > 0) {
+                int i = 0;
                 for (Class<?> type : superInterfaces) {
-                    Class<?>[] generics = doRetrieveGenericInterfaceTypes(type, interfaceType);
+                    Class<?>[] generics = doRetrieveGenericInterfaceTypes(type,
+                            concrete.getGenericInterfaces()[i], interfaceType);
                     if (generics != null) {
                         return generics;
                     }
+                    ++i;
                 }
             }
         }
         return null;
     }
 
-    private static Class<?>[] doRetrieveGenericTypes(Type requiredType, Class<?> rawType) {
-        Checks.checkNotNull(requiredType);
+    private static Class<?>[] doRetrieveGenericTypes(Type requiredType,
+                                                     Class<?> rawType,
+                                                     Map<TypeVariable<?>, Type> resolvedTypes) {
+        if (requiredType == null) {
+            return EMPTY_CLZ_ARR;
+        }
         Class<?>[] elementTypes = null;
         if (requiredType instanceof ParameterizedType) {
             ParameterizedType type = (ParameterizedType) requiredType;
@@ -238,6 +404,9 @@ public final class ClassUtils {
                             } else {
                                 elementTypes[i] = Object.class;
                             }
+                        } else if (maybeTypeVariable[i] instanceof TypeVariable) {
+                            Type clazz = resolvedTypes.get((TypeVariable<?>) maybeTypeVariable[i]);
+                            elementTypes[i] = (clazz instanceof Class) ? (Class<?>) clazz : Object.class;
                         } else {
                             elementTypes[i] = Object.class;
                         }

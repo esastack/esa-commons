@@ -26,10 +26,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,6 +215,109 @@ class ClassUtilsTest {
     }
 
     @Test
+    void testFindGenericTypes1() {
+        final Type[] types0 = ClassUtils.findGenericTypes(AVImpl.class, V.class);
+        assertNotNull(types0);
+        assertEquals(1, types0.length);
+        assertEquals(String.class, types0[0]);
+
+        final Type[] types1 = ClassUtils.findGenericTypes(AVImpl.class, AV.class);
+        assertNotNull(types1);
+        assertEquals(1, types1.length);
+        assertEquals(String.class, types1[0]);
+
+        final Type[] types2 = ClassUtils.findGenericTypes(AVVImpl.class, V.class);
+        assertNotNull(types2);
+        assertEquals(1, types2.length);
+        assertEquals(Integer.class, types2[0]);
+
+        final Type[] types3 = ClassUtils.findGenericTypes(SubAVVImpl.class, V.class);
+        assertNotNull(types3);
+        assertEquals(1, types3.length);
+        assertEquals(Integer.class, types3[0]);
+
+        final Type[] types4 = ClassUtils.findGenericTypes(AVV.class, VV.class);
+        assertNotNull(types4);
+        assertEquals(2, types4.length);
+        assertEquals(String.class, types4[0]);
+        assertEquals(Integer.class, types4[1]);
+
+        final Type[] types5 = ClassUtils.findGenericTypes(AVVImpl.class, VV.class);
+        assertNotNull(types5);
+        assertEquals(2, types5.length);
+        assertEquals(String.class, types5[0]);
+        assertEquals(Integer.class, types5[1]);
+
+        final Type[] types6 = ClassUtils.findGenericTypes(SubAVVImpl.class, VV.class);
+        assertNotNull(types6);
+        assertEquals(2, types6.length);
+        assertEquals(String.class, types6[0]);
+        assertEquals(Integer.class, types6[1]);
+
+        final Type[] types7 = ClassUtils.findGenericTypes(SubAVVImpl.class, VEmpty.class);
+        assertNotNull(types7);
+        assertEquals(0, types7.length);
+
+        final Type[] types8 = ClassUtils.findGenericTypes(SubAVVImpl.class, AVV.class);
+        assertNotNull(types8);
+        assertEquals(0, types8.length);
+
+        final Type[] types9 = ClassUtils.findGenericTypes(SS.class, Empty.class);
+        assertNotNull(types9);
+        assertEquals(0, types9.length);
+    }
+
+    @Test
+    void testFindGenericTypes2() {
+        final Type[] types0 = ClassUtils.findGenericTypes(SImpl.class, S.class);
+        assertNotNull(types0);
+        assertEquals(1, types0.length);
+        assertEquals(String.class, types0[0]);
+
+        final Type[] types1 = ClassUtils.findGenericTypes(SubSSImpl.class, S.class);
+        assertNotNull(types1);
+        assertEquals(1, types1.length);
+        assertEquals(String.class, types1[0]);
+
+        final Type[] types2 = ClassUtils.findGenericTypes(SSImpl.class, SS.class);
+        assertNotNull(types2);
+        assertEquals(2, types2.length);
+        assertEquals(Float.class, types2[0]);
+        assertEquals(String.class, types2[1]);
+
+        final Type[] types3 = ClassUtils.findGenericTypes(SubSSImpl.class, SS.class);
+        assertNotNull(types3);
+        assertEquals(2, types3.length);
+        assertEquals(Float.class, types3[0]);
+        assertEquals(String.class, types3[1]);
+
+        final Type[] types4 = ClassUtils.findGenericTypes(ASImpl.class, S.class);
+        assertNotNull(types4);
+        assertEquals(1, types4.length);
+        assertEquals(String.class, types4[0]);
+
+        final Type[] types5 = ClassUtils.findGenericTypes(ASSImpl.class, SS.class);
+        assertNotNull(types5);
+        assertEquals(2, types5.length);
+        assertEquals(String.class, types5[0]);
+        assertEquals(Integer.class, types5[1]);
+
+        final Type[] types6 = ClassUtils.findGenericTypes(ASS.class, SS.class);
+        assertNotNull(types6);
+        assertEquals(2, types6.length);
+        assertEquals(String.class, types6[0]);
+        assertEquals(Integer.class, types6[1]);
+
+        final Type[] types7 = ClassUtils.findGenericTypes(ASS.class, Empty.class);
+        assertNotNull(types7);
+        assertEquals(0, types7.length);
+
+        final Type[] types8 = ClassUtils.findGenericTypes(SSIImpl.class, SSI.class);
+        assertNotNull(types8);
+        assertEquals(0, types8.length);
+    }
+
+    @Test
     void testDoWithMethods() {
         final List<String> methods = new LinkedList<>();
         ClassUtils.doWithMethods(Son.class, m -> methods.add(m.getName()), m -> !m.getName().equals("son1"));
@@ -246,6 +351,73 @@ class ClassUtilsTest {
         assertTrue(methods.contains("grandFather"));
         assertTrue(methods.contains("son1"));
         assertFalse(methods.contains("toString"));
+    }
+
+    @Test
+    void testFindOverriddenMethods() throws Throwable {
+        final Method m1 = SubAVVImpl.class.getMethod("toString");
+        List<Method> founds1 = ClassUtils.findOverriddenMethods(m1);
+        assertEquals(6, founds1.size());
+        assertEquals("toString", founds1.get(0).getName());
+        assertEquals(AVVImpl.class, founds1.get(0).getDeclaringClass());
+        assertEquals("toString", founds1.get(1).getName());
+        assertEquals(AVV.class, founds1.get(1).getDeclaringClass());
+        assertEquals("toString", founds1.get(2).getName());
+        assertEquals(VV.class, founds1.get(2).getDeclaringClass());
+
+        assertEquals("toString", founds1.get(3).getName());
+        assertEquals(V.class, founds1.get(3).getDeclaringClass());
+        assertEquals("toString", founds1.get(4).getName());
+        assertEquals(VEmpty.class, founds1.get(4).getDeclaringClass());
+        assertEquals("toString", founds1.get(5).getName());
+        assertEquals(Object.class, founds1.get(5).getDeclaringClass());
+
+        final Method m2 = ASImpl.class.getMethod("getE");
+        List<Method> founds2 = ClassUtils.findOverriddenMethods(m2);
+        assertEquals(2, founds2.size());
+        assertEquals("getE", founds2.get(0).getName());
+        assertEquals(AS.class, founds2.get(0).getDeclaringClass());
+        assertEquals("getE", founds2.get(1).getName());
+        assertEquals(S.class, founds2.get(1).getDeclaringClass());
+    }
+
+    @Test
+    void testFindOverriddenMethod() throws Throwable {
+        final Method m1 = AS.class.getMethod("getE");
+        Optional<Method> target1 = ClassUtils.findOverriddenMethod(m1);
+        assertTrue(target1.isPresent());
+        assertEquals("getE", target1.get().getName());
+        assertEquals(S.class, target1.get().getDeclaringClass());
+
+        final Method m2 = ASImpl.class.getMethod("getE");
+        Optional<Method> target2 = ClassUtils.findOverriddenMethod(m2);
+        assertTrue(target2.isPresent());
+        assertEquals("getE", target2.get().getName());
+        assertEquals(AS.class, target2.get().getDeclaringClass());
+
+        final Method m3 = SSIImpl.class.getMethod("saveAll", Float.class, String.class);
+        Optional<Method> target3 = ClassUtils.findOverriddenMethod(m3);
+        assertTrue(target3.isPresent());
+        assertEquals("saveAll", target3.get().getName());
+        assertEquals(SS.class, target3.get().getDeclaringClass());
+
+        final Method m4 = SS.class.getMethod("saveE", Object.class);
+        Optional<Method> target4 = ClassUtils.findOverriddenMethod(m4);
+        assertTrue(target4.isPresent());
+        assertEquals("saveE", target4.get().getName());
+        assertEquals(S.class, target4.get().getDeclaringClass());
+
+        final Method m5 = SubAVVImpl.class.getMethod("saveE", Integer.class);
+        Optional<Method> target5 = ClassUtils.findOverriddenMethod(m5);
+        assertTrue(target5.isPresent());
+        assertEquals("saveE", target5.get().getName());
+        assertEquals(V.class, target5.get().getDeclaringClass());
+
+        final Method m6 = SubAVVImpl.class.getMethod("saveT", String.class);
+        Optional<Method> target6 = ClassUtils.findOverriddenMethod(m6);
+        assertTrue(target6.isPresent());
+        assertEquals("saveT", target6.get().getName());
+        assertEquals(VV.class, target6.get().getDeclaringClass());
     }
 
     private static class GrandFa {
@@ -325,5 +497,272 @@ class ClassUtilsTest {
     private static class ForTest8 extends ForTest7 {
     }
 
+    private interface Empty {
+
+    }
+
+    private interface S<E> extends Empty {
+
+        E getE();
+
+        void saveE(E e);
+
+    }
+
+    private abstract static class AS<E> implements S<E> {
+
+        @Override
+        public E getE() {
+            return null;
+        }
+
+    }
+
+    private static class ASImpl extends AS<String> {
+
+        @Override
+        public String getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(String s) {
+
+        }
+    }
+
+    private static class SImpl implements S<String> {
+
+        @Override
+        public String getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(String s) {
+
+        }
+    }
+
+    private interface SS<T, E> extends S<E>, Empty {
+
+        T getT();
+
+        void saveAll(T t, E e);
+
+        void saveT(T t);
+
+        @Override
+        default void saveE(E e) {
+
+        }
+    }
+
+    private abstract static class ASS implements SS<String, Integer> {
+
+    }
+
+    private static class ASSImpl extends ASS {
+
+        @Override
+        public Integer getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(Integer integer) {
+
+        }
+
+        @Override
+        public String getT() {
+            return null;
+        }
+
+        @Override
+        public void saveAll(String s, Integer integer) {
+
+        }
+
+        @Override
+        public void saveT(String s) {
+
+        }
+    }
+
+    private interface SSI extends SS<Float, String> {
+
+    }
+
+    private static class SSIImpl implements SSI {
+
+        @Override
+        public String getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(String s) {
+
+        }
+
+        @Override
+        public Float getT() {
+            return null;
+        }
+
+        @Override
+        public void saveAll(Float aFloat, String s) {
+
+        }
+
+        @Override
+        public void saveT(Float aFloat) {
+
+        }
+    }
+
+    private static class SSImpl implements SS<Float, String> {
+
+        @Override
+        public String getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(String s) {
+
+        }
+
+        @Override
+        public Float getT() {
+            return null;
+        }
+
+        @Override
+        public void saveAll(Float aFloat, String s) {
+
+        }
+
+        @Override
+        public void saveT(Float aFloat) {
+
+        }
+    }
+
+    private static class SubSSImpl extends SSImpl {
+
+    }
+
+
+    private abstract static class VEmpty {
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
+
+    private abstract static class V<E> extends VEmpty {
+
+        public E getE() {
+            return null;
+        }
+
+        public void saveE(E e) {
+
+        }
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
+
+    private abstract static class AV<E> extends V<E> {
+
+    }
+
+    private static class AVImpl extends AV<String> {
+
+        @Override
+        public String getE() {
+            return null;
+        }
+
+        @Override
+        public void saveE(String s) {
+
+        }
+    }
+
+    private abstract static class VV<T, E> extends V<E> {
+
+        public T getT() {
+            return null;
+        }
+
+        public void saveAll(T t, E e) {
+
+        }
+
+        public void saveT(T t) {
+
+        }
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
+
+    private abstract static class AVV extends VV<String, Integer> {
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
+
+    private static class AVVImpl extends AVV {
+
+        @Override
+        public Integer getE() {
+            return null;
+        }
+
+        @Override
+        public String getT() {
+            return null;
+        }
+
+        @Override
+        public void saveAll(String s, Integer integer) {
+
+        }
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
+
+    private static class SubAVVImpl extends AVVImpl {
+
+        @Override
+        public void saveE(Integer integer) {
+            super.saveE(integer);
+        }
+
+        @Override
+        public void saveT(String s) {
+            super.saveT(s);
+        }
+
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    }
 
 }
