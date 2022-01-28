@@ -37,6 +37,7 @@ class AttributeMapTest {
         assertEquals(0, attrs.size());
         assertTrue(attrs.isEmpty());
         assertFalse(attrs.hasAttr(key));
+        assertSame(attrs, attrs.asMap());
 
         final Attribute<String> attr = attrs.attr(key);
         assertNotNull(attr);

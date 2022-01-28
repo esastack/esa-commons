@@ -15,6 +15,7 @@
  */
 package esa.commons.collection;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -57,5 +58,10 @@ public interface Attributes {
      * Whether there are any attributes contained in this.
      */
     boolean isEmpty();
+
+    /**
+     * Returns this {@link Attributes} as a {@link Map}
+     */
+    Map<AttributeKey<?>, Attribute<?>> asMap();
 
 }
