@@ -16,6 +16,7 @@
 package esa.commons.collection;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -51,6 +52,11 @@ public class AttributeMap extends HashMap<AttributeKey<?>, Attribute<?>> impleme
     @Override
     public boolean hasAttr(AttributeKey<?> key) {
         return super.containsKey(key);
+    }
+
+    @Override
+    public Map<AttributeKey<?>, Attribute<?>> asMap() {
+        return this;
     }
 
     private static class AttributeImpl<V> implements Attribute<V> {
