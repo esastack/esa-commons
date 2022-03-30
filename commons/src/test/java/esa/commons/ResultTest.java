@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 OPPO ESA Stack Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package esa.commons;
 
 import org.junit.jupiter.api.Test;
@@ -54,6 +69,7 @@ class ResultTest {
 
     @Test
     void testNullErr() {
+        assertSame(Result.ok(), Result.ok(null));
         final Result<Integer, String> r = Result.err();
         assertFalse(r.isOk());
         assertTrue(r.isErr());
@@ -92,6 +108,7 @@ class ResultTest {
 
     @Test
     void testOk() {
+        assertSame(Result.err(), Result.err(null));
         final Result<Integer, String> r = Result.ok(10);
         assertTrue(r.isOk());
         assertFalse(r.isErr());
