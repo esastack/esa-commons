@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -141,6 +142,9 @@ class ResultTest {
         assertFalse(r.containsErr(null));
         assertFalse(r.containsErr(""));
 
+        assertEquals(r, r);
+        assertNotEquals(null, r);
+        assertNotEquals(new Object(), r);
         assertEquals(Result.ok(10), r);
         assertEquals(r.hashCode(), Result.ok(10).hashCode());
         assertEquals("Result::Ok[10]", r.toString());
@@ -170,7 +174,7 @@ class ResultTest {
         assertSame(r, r.map(v -> null));
         assertSame(r, r.map(v -> 1));
 
-        assertSame(r, r.map(v -> null));
+        assertSame(Result.err(), r.mapErr(v -> null));
         assertEquals("foo", r.mapErr(v -> "foo").getErr());
 
         assertFalse(r.contains(null));
@@ -180,6 +184,9 @@ class ResultTest {
         assertFalse(r.containsErr(""));
         assertTrue(r.containsErr("yoo"));
 
+        assertEquals(r, r);
+        assertNotEquals(null, r);
+        assertNotEquals(new Object(), r);
         assertEquals(r, Result.err("yoo"));
         assertEquals(r.hashCode(), Result.err("yoo").hashCode());
         assertEquals("Result::Err[yoo]", r.toString());
