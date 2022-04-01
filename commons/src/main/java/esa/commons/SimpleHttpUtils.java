@@ -83,9 +83,9 @@ public final class SimpleHttpUtils {
             IOUtils.closeQuietly(outputStream);
 
             int respCode = urlConnection.getResponseCode();
-            inputStream = urlConnection.getInputStream();
 
             if (200 == respCode) {
+                inputStream = urlConnection.getInputStream();
                 return IOUtils.toByteArray(inputStream);
             } else if (408 == respCode) {
                 failUrls.add(url);
