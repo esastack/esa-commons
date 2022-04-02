@@ -139,10 +139,8 @@ public final class InternalThreads {
         boolean available = false;
         try {
             if (ClassUtils.hasClass("io.netty.util.concurrent.FastThreadLocalThread")) {
-                NettyInternalThread t = new NettyInternalThread("instantly");
-                if (t.threadLocalMap() == null) {
-                    available = true;
-                }
+                new NettyInternalThread("instantly");
+                available = true;
             }
         } catch (Throwable ignored) {
         }
