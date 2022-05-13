@@ -5,6 +5,7 @@ import esa.commons.Checks;
 import java.io.File;
 import java.nio.file.WatchEvent;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 public class FileWatcherBuilder {
@@ -15,8 +16,9 @@ public class FileWatcherBuilder {
     private Consumer<WatchEvent<?>> modify;
     private Consumer<WatchEvent<?>> overflow;
     private Executor executor;
+    private ScheduledExecutorService modifyDelayScheduler;
     private WatchEvent.Modifier[] modifiers;
-    private long delay = 0;
+    private long modifyDelay = 0;
 
     FileWatcherBuilder(File file) {
         Checks.checkNotNull(file, "file");
@@ -43,9 +45,14 @@ public class FileWatcherBuilder {
         return this;
     }
 
-    public FileWatcherBuilder delay(long delay) {
-        Checks.checkArg(delay > 0, "Delay should be greater than 0.");
-        this.delay = delay;
+    public FileWatcherBuilder modifyDelay(long modifyDelay) {
+        return modifyDelay(modifyDelay, null);
+    }
+
+    public FileWatcherBuilder modifyDelay(long modifyDelay, ScheduledExecutorService modifyDelayScheduler) {
+        Checks.checkArg(modifyDelay >= 0, "modifyDelay should be >= 0.");
+        this.modifyDelay = modifyDelay;
+        this.modifyDelayScheduler = modifyDelayScheduler;
         return this;
     }
 
@@ -68,7 +75,8 @@ public class FileWatcherBuilder {
                 modify,
                 overflow,
                 modifiers,
-                delay,
-                executor);
+                modifyDelay,
+                executor,
+                modifyDelayScheduler);
     }
 }
