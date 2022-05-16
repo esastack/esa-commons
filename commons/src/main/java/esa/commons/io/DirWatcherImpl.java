@@ -22,16 +22,25 @@ public class DirWatcherImpl extends AbstractPathWatcher {
     private final Map<WatchKey, DirInfo> watchKeyPathMap = new HashMap<>();
     private final int maxDepth;
 
-    DirWatcherImpl(Path path, int maxDepth, Consumer<WatchEventContext<?>> create, Consumer<WatchEventContext<?>> delete, Consumer<WatchEventContext<?>> modify, Consumer<WatchEventContext<?>> overflow, WatchEvent.Modifier[] modifiers, long modifyDelay, Executor executor, ScheduledExecutorService modifyDelayScheduler) {
+    DirWatcherImpl(Path path,
+                   int maxDepth,
+                   Consumer<WatchEventContext<?>> create,
+                   Consumer<WatchEventContext<?>> delete,
+                   Consumer<WatchEventContext<?>> modify,
+                   Consumer<WatchEventContext<?>> overflow,
+                   WatchEvent.Modifier[] modifiers,
+                   long delay,
+                   Executor executor,
+                   ScheduledExecutorService delayScheduler) {
         super(path,
                 create,
                 delete,
                 modify,
                 overflow,
                 modifiers,
-                modifyDelay,
+                delay,
                 executor,
-                modifyDelayScheduler);
+                delayScheduler);
         Checks.checkArg(maxDepth >= 0, "MaxDepth should be >= 0!");
         this.maxDepth = maxDepth;
     }
@@ -42,7 +51,14 @@ public class DirWatcherImpl extends AbstractPathWatcher {
         File file = new File(dirInfo.dir, event.context().toString());
 
         if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-            register(file, dirInfo.currentDepth + 1);
+            if (file.isDirectory()) {
+                register(file, dirInfo.currentDepth + 1);
+            }
+        } else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+            //Folder modification events are not notified
+            if (file.isDirectory()) {
+                return null;
+            }
         }
         return file;
     }
@@ -60,7 +76,14 @@ public class DirWatcherImpl extends AbstractPathWatcher {
 
     @Override
     void register(Path root) {
-        register(root.toFile(), 0);
+        File file = root.toFile();
+        if (!file.exists()) {
+            throw new IllegalStateException("File(" + file + ") doesn't exist!");
+        }
+        if (!file.isDirectory()) {
+            throw new IllegalStateException("File(" + file + ") should be a directory!");
+        }
+        register(file, 0);
     }
 
     private void register(File file,
@@ -72,18 +95,12 @@ public class DirWatcherImpl extends AbstractPathWatcher {
 
         try {
             final WatchKey key;
-            if (!file.exists()) {
-                throw new IllegalStateException("File(" + file + ") doesn't exist!");
-            }
-            if (!file.isDirectory()) {
-                throw new IllegalStateException("File(" + file + ") should be a directory!");
-            }
 
             key = file.toPath().register(watchService, kinds, modifiers);
             watchKeyPathMap.put(key, new DirInfo(file, currentDepth));
             for (File childFile : Objects.requireNonNull(file.listFiles(File::isDirectory))) {
                 if (childFile.isDirectory()) {
-                    register(file, currentDepth + 1);
+                    register(childFile, currentDepth + 1);
                 }
             }
         } catch (IOException e) {

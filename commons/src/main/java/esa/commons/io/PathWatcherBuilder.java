@@ -18,9 +18,9 @@ public class PathWatcherBuilder {
     private Consumer<WatchEventContext<?>> modify;
     private Consumer<WatchEventContext<?>> overflow;
     private Executor executor;
-    private ScheduledExecutorService modifyDelayScheduler;
+    private ScheduledExecutorService delayScheduler;
     private WatchEvent.Modifier[] modifiers;
-    private long modifyDelay = 200;
+    private long delay = 200;
 
     public PathWatcherBuilder(Path path, boolean watchPathIsDir, int maxDepth) {
         Checks.checkNotNull(path, "path");
@@ -49,14 +49,14 @@ public class PathWatcherBuilder {
         return this;
     }
 
-    public PathWatcherBuilder modifyDelay(long modifyDelay) {
-        return modifyDelay(modifyDelay, null);
+    public PathWatcherBuilder delay(long delay) {
+        return delay(delay, null);
     }
 
-    public PathWatcherBuilder modifyDelay(long modifyDelay, ScheduledExecutorService modifyDelayScheduler) {
-        Checks.checkArg(modifyDelay >= 0, "modifyDelay should be >= 0.");
-        this.modifyDelay = modifyDelay;
-        this.modifyDelayScheduler = modifyDelayScheduler;
+    public PathWatcherBuilder delay(long delay, ScheduledExecutorService delayScheduler) {
+        Checks.checkArg(delay >= 0, "delay should be >= 0.");
+        this.delay = delay;
+        this.delayScheduler = delayScheduler;
         return this;
     }
 
@@ -81,9 +81,9 @@ public class PathWatcherBuilder {
                     modify,
                     overflow,
                     modifiers,
-                    modifyDelay,
+                    delay,
                     executor,
-                    modifyDelayScheduler);
+                    delayScheduler);
         }
         return new FileWatcherImpl(path,
                 create,
@@ -91,8 +91,8 @@ public class PathWatcherBuilder {
                 modify,
                 overflow,
                 modifiers,
-                modifyDelay,
+                delay,
                 executor,
-                modifyDelayScheduler);
+                delayScheduler);
     }
 }

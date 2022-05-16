@@ -36,8 +36,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
     final WatchEvent.Kind<?>[] kinds;
 
     private final Executor executor;
-    private final long modifyDelay;
-    private final ScheduledExecutorService modifyDelayScheduler;
+    private final long delay;
+    private final ScheduledExecutorService delayScheduler;
     private final Set<String> eventSet;
     private volatile boolean started = false;
     private volatile boolean stopped = false;
@@ -48,9 +48,9 @@ abstract class AbstractPathWatcher implements PathWatcher {
                         Consumer<WatchEventContext<?>> modify,
                         Consumer<WatchEventContext<?>> overflow,
                         WatchEvent.Modifier[] modifiers,
-                        long modifyDelay,
+                        long delay,
                         Executor executor,
-                        ScheduledExecutorService modifyDelayScheduler) {
+                        ScheduledExecutorService delayScheduler) {
         Checks.checkNotNull(path, "path");
         this.root = path;
         this.modifiers = modifiers == null ? new WatchEvent.Modifier[0] : modifiers;
@@ -59,14 +59,14 @@ abstract class AbstractPathWatcher implements PathWatcher {
         this.delete = doIfConsumerNotNull(delete, () -> events.add(StandardWatchEventKinds.ENTRY_DELETE));
         this.modify = doIfConsumerNotNull(modify, () -> events.add(StandardWatchEventKinds.ENTRY_MODIFY));
         this.overflow = doIfConsumerNotNull(overflow, () -> events.add(StandardWatchEventKinds.OVERFLOW));
-        Checks.checkArg(events.size() == 0, "No processors of WatchEventContext!" +
+        Checks.checkArg(events.size() > 0, "No processors of WatchEventContext!" +
                 "Please add processors of WatchEventContext by call of on...(),such as onCreate().");
         this.kinds = events.toArray(new WatchEvent.Kind[0]);
 
         this.executor = getExecutor(executor, path);
-        this.modifyDelay = modifyDelay;
-        this.eventSet = modifyDelay > 0 ? new ConcurrentHashSet<>() : null;
-        this.modifyDelayScheduler = getModifyDelayScheduler(modifyDelayScheduler, path);
+        this.delay = delay;
+        this.eventSet = delay > 0 ? new ConcurrentHashSet<>() : null;
+        this.delayScheduler = getdelayScheduler(delayScheduler, path);
 
         try {
             this.watchService = FileSystems.getDefault().newWatchService();
@@ -107,8 +107,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
         IOUtils.closeQuietly(watchService);
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
-        //modifyDelayScheduler after modifyDelayScheduler is shutdown after stop
-        atomicSchedulerOperation(modifyDelayScheduler::shutdown);
+        //delayScheduler after delayScheduler is shutdown after stop
+        atomicSchedulerOperation(delayScheduler::shutdown);
     }
 
     private void watch() {
@@ -133,24 +133,19 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
 
         for (WatchEvent<?> event : wk.pollEvents()) {
-            //如果不是目录，且修改的文件不是指定文件，则跳过
             File file = getFile(event, wk);
             if (file == null) {
                 continue;
             }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                create.accept(new WatchEventContextImpl<>(event, file));
+                pushEvent(new WatchEventContextImpl<>(event, file), create);
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                if (modifyDelay > 0) {
-                    delayPushModifyEvent(new WatchEventContextImpl<>(event, file));
-                } else {
-                    modify.accept(new WatchEventContextImpl<>(event, file));
-                }
+                pushEvent(new WatchEventContextImpl<>(event, file), modify);
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                delete.accept(new WatchEventContextImpl<>(event, file));
+                pushEvent(new WatchEventContextImpl<>(event, file), delete);
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                overflow.accept(new WatchEventContextImpl<>(event, file));
+                pushEvent(new WatchEventContextImpl<>(event, file), overflow);
             }
         }
         wk.reset();
@@ -162,29 +157,34 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     abstract File getFile(WatchEvent<?> event, WatchKey wk);
 
-    private void delayPushModifyEvent(WatchEventContext<?> ctx) {
-        final String path = ctx.event().context().toString();
-        if (eventSet.contains(path)) {
+    private void pushEvent(WatchEventContext<?> ctx, Consumer<WatchEventContext<?>> consumer) {
+        if (delay <= 0) {
+            consumer.accept(ctx);
             return;
         }
-        eventSet.add(path);
+
+        final String eventKey = ctx.event().context().toString() + ctx.event().kind().name();
+        if (eventSet.contains(eventKey)) {
+            return;
+        }
+        eventSet.add(eventKey);
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
-        //modifyDelayScheduler when modifyDelayScheduler had shutdown after stop
+        //delayScheduler when delayScheduler had shutdown after stop
         atomicSchedulerOperation(() -> {
             if (!stopped) {
-                modifyDelayScheduler.schedule(() -> {
-                    eventSet.remove(path);
-                    modify.accept(ctx);
-                }, modifyDelay, TimeUnit.MILLISECONDS);
+                delayScheduler.schedule(() -> {
+                    eventSet.remove(eventKey);
+                    consumer.accept(ctx);
+                }, delay, TimeUnit.MILLISECONDS);
             }
         });
 
     }
 
     private void atomicSchedulerOperation(Runnable runnable) {
-        Checks.checkNotNull(modifyDelayScheduler, "modifyDelayScheduler");
-        synchronized (modifyDelayScheduler) {
+        Checks.checkNotNull(delayScheduler, "delayScheduler");
+        synchronized (delayScheduler) {
             runnable.run();
         }
     }
@@ -199,9 +199,9 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
     }
 
-    private static ScheduledExecutorService getModifyDelayScheduler(ScheduledExecutorService scheduler, Path path) {
+    private static ScheduledExecutorService getdelayScheduler(ScheduledExecutorService scheduler, Path path) {
         if (scheduler == null) {
-            return defaultScheduler("FileWatcher-ModifyDelayScheduler-" + path);
+            return defaultScheduler("FileWatcher-delayScheduler-" + path);
         } else {
             return scheduler;
         }
@@ -231,7 +231,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     /**
-     * The default modifyDelayScheduler does not share threads to avoid the bad influence of FileWatchers
+     * The default delayScheduler does not share threads to avoid the bad influence of FileWatchers
      * among multiple components.
      *
      * @param name schedulerName

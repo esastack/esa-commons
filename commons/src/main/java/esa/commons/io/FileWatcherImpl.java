@@ -21,18 +21,18 @@ class FileWatcherImpl extends AbstractPathWatcher {
                     Consumer<WatchEventContext<?>> modify,
                     Consumer<WatchEventContext<?>> overflow,
                     WatchEvent.Modifier[] modifiers,
-                    long modifyDelay,
+                    long delay,
                     Executor executor,
-                    ScheduledExecutorService modifyDelayScheduler) {
+                    ScheduledExecutorService delayScheduler) {
         super(path,
                 create,
                 delete,
                 modify,
                 overflow,
                 modifiers,
-                modifyDelay,
+                delay,
                 executor,
-                modifyDelayScheduler);
+                delayScheduler);
         this.path = path;
     }
 
