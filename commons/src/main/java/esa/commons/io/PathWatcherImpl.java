@@ -5,10 +5,12 @@ import esa.commons.concurrent.ConcurrentHashSet;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -21,15 +23,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-class FileWatcherImpl implements FileWatcher {
+class PathWatcherImpl implements PathWatcher {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileWatcherImpl.class);
-    private final File file;
+    private static final Logger LOGGER = LoggerFactory.getLogger(PathWatcherImpl.class);
+    private final Path path;
+    private final boolean isDir;
     private final ArrayList<WatchEvent.Kind<?>> events = new ArrayList<>(4);
-    private Consumer<WatchEvent<?>> create;
-    private Consumer<WatchEvent<?>> delete;
-    private Consumer<WatchEvent<?>> modify;
-    private Consumer<WatchEvent<?>> overflow;
+    private Consumer<WatchEventContext<?>> create;
+    private Consumer<WatchEventContext<?>> delete;
+    private Consumer<WatchEventContext<?>> modify;
+    private Consumer<WatchEventContext<?>> overflow;
     private WatchService watchService;
     private final WatchEvent.Modifier[] modifiers;
     private final long modifyDelay;
@@ -40,17 +43,19 @@ class FileWatcherImpl implements FileWatcher {
     private volatile boolean started = false;
     private volatile boolean stopped = false;
 
-    public FileWatcherImpl(File file,
-                           Consumer<WatchEvent<?>> create,
-                           Consumer<WatchEvent<?>> delete,
-                           Consumer<WatchEvent<?>> modify,
-                           Consumer<WatchEvent<?>> overflow,
-                           WatchEvent.Modifier[] modifiers,
-                           long modifyDelay,
-                           Executor executor,
-                           ScheduledExecutorService modifyDelayScheduler) {
-        Checks.checkNotNull(file, "file");
-        this.file = file;
+    PathWatcherImpl(Path path,
+                    boolean isDir,
+                    Consumer<WatchEventContext<?>> create,
+                    Consumer<WatchEventContext<?>> delete,
+                    Consumer<WatchEventContext<?>> modify,
+                    Consumer<WatchEventContext<?>> overflow,
+                    WatchEvent.Modifier[] modifiers,
+                    long modifyDelay,
+                    Executor executor,
+                    ScheduledExecutorService modifyDelayScheduler) {
+        Checks.checkNotNull(path, "path");
+        this.path = path;
+        this.isDir = isDir;
         this.modifiers = modifiers;
         if (create != null) {
             this.create = create;
@@ -69,13 +74,13 @@ class FileWatcherImpl implements FileWatcher {
             events.add(StandardWatchEventKinds.OVERFLOW);
         }
         if (events.size() == 0) {
-            throw new IllegalStateException("No processors of watchEvent!" +
-                    "Please add processors of watchEvent by call of on...()," +
+            throw new IllegalStateException("No processors of WatchEventContext!" +
+                    "Please add processors of WatchEventContext by call of on...()," +
                     "such as onCreate().");
         }
 
         if (executor == null) {
-            this.executor = defaultExecutor("FileWatcher-Executor-" + file.getName());
+            this.executor = defaultExecutor("FileWatcher-Executor-" + path);
         } else {
             this.executor = executor;
         }
@@ -85,7 +90,7 @@ class FileWatcherImpl implements FileWatcher {
             this.eventSet = new ConcurrentHashSet<>();
             if (modifyDelayScheduler == null) {
                 this.modifyDelayScheduler =
-                        defaultScheduler("FileWatcher-ModifyDelayScheduler-" + file.getName());
+                        defaultScheduler("FileWatcher-ModifyDelayScheduler-" + path);
             } else {
                 this.modifyDelayScheduler = modifyDelayScheduler;
             }
@@ -94,6 +99,7 @@ class FileWatcherImpl implements FileWatcher {
             this.modifyDelayScheduler = null;
         }
 
+        init();
         register();
     }
 
@@ -121,6 +127,7 @@ class FileWatcherImpl implements FileWatcher {
         if (stopped) {
             return;
         }
+        LOGGER.info("PathWatcher of {} is stopping!", path);
         stopped = true;
         IOUtils.closeQuietly(watchService);
 
@@ -134,7 +141,7 @@ class FileWatcherImpl implements FileWatcher {
             try {
                 doWatch();
             } catch (Throwable e) {
-                LOGGER.error("Error occur when watch file({}).", file.getName(), e);
+                LOGGER.error("Error occur when watch {}.", path, e);
             }
         }
     }
@@ -151,41 +158,62 @@ class FileWatcherImpl implements FileWatcher {
         }
 
         for (WatchEvent<?> event : wk.pollEvents()) {
+            //如果不是目录，且修改的文件不是指定文件，则跳过
+            if (!isDir && !path.endsWith(event.context().toString())) {
+                continue;
+            }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                create.accept(event);
+                create.accept(new WatchEventContextImpl<>(event, path, isDir));
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                 if (modifyDelay > 0) {
-                    delayPushModifyEvent(event);
+                    delayPushModifyEvent(new WatchEventContextImpl<>(event, path, isDir));
                 } else {
-                    modify.accept(event);
+                    modify.accept(new WatchEventContextImpl<>(event, path, isDir));
                 }
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                delete.accept(event);
+                delete.accept(new WatchEventContextImpl<>(event, path, isDir));
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                overflow.accept(event);
+                overflow.accept(new WatchEventContextImpl<>(event, path, isDir));
             }
         }
         wk.reset();
     }
 
-    private void register() {
+    private void init() {
+        //创建不存在的目录或父目录
         try {
-            watchService = FileSystems.getDefault().newWatchService();
-            final WatchEvent.Kind<?>[] kinds = events.toArray(new WatchEvent.Kind[0]);
-
-            if (modifiers == null || modifiers.length == 0) {
-                file.toPath().register(watchService, kinds);
-            } else {
-                file.toPath().register(watchService, kinds, modifiers);
+            if (!Files.exists(this.path, LinkOption.NOFOLLOW_LINKS)) {
+                if (isDir) {
+                    Files.createDirectories(this.path);
+                } else {
+                    Files.createDirectories(this.path.getParent());
+                }
             }
         } catch (IOException e) {
             throw new WatchException(e);
         }
     }
 
-    private void delayPushModifyEvent(WatchEvent<?> event) {
-        final String path = event.context().toString();
+    private void register() {
+        try {
+            watchService = FileSystems.getDefault().newWatchService();
+            final WatchEvent.Kind<?>[] kinds = events.toArray(new WatchEvent.Kind[0]);
+            if (isDir) {
+                path.register(watchService, kinds,
+                        modifiers == null ? new WatchEvent.Modifier[0] : modifiers);
+            } else {
+                path.getParent().register(watchService, kinds,
+                        modifiers == null ? new WatchEvent.Modifier[0] : modifiers);
+            }
+        } catch (IOException e) {
+            throw new WatchException(e);
+        }
+
+    }
+
+    private void delayPushModifyEvent(WatchEventContext<?> ctx) {
+        final String path = ctx.event().context().toString();
         if (eventSet.contains(path)) {
             return;
         }
@@ -197,7 +225,7 @@ class FileWatcherImpl implements FileWatcher {
             if (!stopped) {
                 modifyDelayScheduler.schedule(() -> {
                     eventSet.remove(path);
-                    modify.accept(event);
+                    modify.accept(ctx);
                 }, modifyDelay, TimeUnit.MILLISECONDS);
             }
         });
@@ -205,7 +233,7 @@ class FileWatcherImpl implements FileWatcher {
     }
 
     private void atomicSchedulerOperation(Runnable runnable) {
-        Checks.checkNotNull(modifyDelayScheduler,"modifyDelayScheduler");
+        Checks.checkNotNull(modifyDelayScheduler, "modifyDelayScheduler");
         synchronized (modifyDelayScheduler) {
             runnable.run();
         }

@@ -2,74 +2,77 @@ package esa.commons.io;
 
 import esa.commons.Checks;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
-public class FileWatcherBuilder {
+public class PathWatcherBuilder {
 
-    private final File file;
-    private Consumer<WatchEvent<?>> create;
-    private Consumer<WatchEvent<?>> delete;
-    private Consumer<WatchEvent<?>> modify;
-    private Consumer<WatchEvent<?>> overflow;
+    private final Path path;
+    private final boolean isDir;
+    private Consumer<WatchEventContext<?>> create;
+    private Consumer<WatchEventContext<?>> delete;
+    private Consumer<WatchEventContext<?>> modify;
+    private Consumer<WatchEventContext<?>> overflow;
     private Executor executor;
     private ScheduledExecutorService modifyDelayScheduler;
     private WatchEvent.Modifier[] modifiers;
-    private long modifyDelay = 0;
+    private long modifyDelay = 200;
 
-    FileWatcherBuilder(File file) {
-        Checks.checkNotNull(file, "file");
-        this.file = file;
+    public PathWatcherBuilder(Path path, boolean isDir) {
+        Checks.checkNotNull(path, "path");
+        this.path = path;
+        this.isDir = isDir;
     }
 
-    public FileWatcherBuilder onCreate(Consumer<WatchEvent<?>> create) {
+    public PathWatcherBuilder onCreate(Consumer<WatchEventContext<?>> create) {
         this.create = create;
         return this;
     }
 
-    public FileWatcherBuilder onDelete(Consumer<WatchEvent<?>> delete) {
+    public PathWatcherBuilder onDelete(Consumer<WatchEventContext<?>> delete) {
         this.delete = delete;
         return this;
     }
 
-    public FileWatcherBuilder onModify(Consumer<WatchEvent<?>> modify) {
+    public PathWatcherBuilder onModify(Consumer<WatchEventContext<?>> modify) {
         this.modify = modify;
         return this;
     }
 
-    public FileWatcherBuilder onOverflow(Consumer<WatchEvent<?>> overflow) {
+    public PathWatcherBuilder onOverflow(Consumer<WatchEventContext<?>> overflow) {
         this.overflow = overflow;
         return this;
     }
 
-    public FileWatcherBuilder modifyDelay(long modifyDelay) {
+    public PathWatcherBuilder modifyDelay(long modifyDelay) {
         return modifyDelay(modifyDelay, null);
     }
 
-    public FileWatcherBuilder modifyDelay(long modifyDelay, ScheduledExecutorService modifyDelayScheduler) {
+    public PathWatcherBuilder modifyDelay(long modifyDelay, ScheduledExecutorService modifyDelayScheduler) {
         Checks.checkArg(modifyDelay >= 0, "modifyDelay should be >= 0.");
         this.modifyDelay = modifyDelay;
         this.modifyDelayScheduler = modifyDelayScheduler;
         return this;
     }
 
-    public FileWatcherBuilder modifiers(WatchEvent.Modifier[] modifiers) {
+    public PathWatcherBuilder modifiers(WatchEvent.Modifier[] modifiers) {
         Checks.checkNotNull(modifiers, "modifiers");
         this.modifiers = modifiers;
         return this;
     }
 
-    public FileWatcherBuilder customExecutor(Executor executor) {
+    public PathWatcherBuilder customExecutor(Executor executor) {
         Checks.checkNotNull(executor, "executor");
         this.executor = executor;
         return this;
     }
 
-    public FileWatcher build() {
-        return new FileWatcherImpl(file,
+    public PathWatcher build() {
+        return new PathWatcherImpl(path,
+                isDir,
                 create,
                 delete,
                 modify,
