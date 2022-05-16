@@ -11,7 +11,8 @@ import java.util.function.Consumer;
 public class PathWatcherBuilder {
 
     private final Path path;
-    private final boolean isDir;
+    private final boolean watchPathIsDir;
+    private final int maxDepth;
     private Consumer<WatchEventContext<?>> create;
     private Consumer<WatchEventContext<?>> delete;
     private Consumer<WatchEventContext<?>> modify;
@@ -21,10 +22,11 @@ public class PathWatcherBuilder {
     private WatchEvent.Modifier[] modifiers;
     private long modifyDelay = 200;
 
-    public PathWatcherBuilder(Path path, boolean isDir) {
+    public PathWatcherBuilder(Path path, boolean watchPathIsDir, int maxDepth) {
         Checks.checkNotNull(path, "path");
         this.path = path;
-        this.isDir = isDir;
+        this.watchPathIsDir = watchPathIsDir;
+        this.maxDepth = maxDepth;
     }
 
     public PathWatcherBuilder onCreate(Consumer<WatchEventContext<?>> create) {
@@ -72,7 +74,8 @@ public class PathWatcherBuilder {
 
     public PathWatcher build() {
         return new PathWatcherImpl(path,
-                isDir,
+                watchPathIsDir,
+                maxDepth,
                 create,
                 delete,
                 modify,

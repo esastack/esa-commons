@@ -9,10 +9,10 @@ public interface PathWatcher {
     void stop();
 
     static PathWatcherBuilder watchFile(Path file) {
-        return new PathWatcherBuilder(file, false);
+        return new PathWatcherBuilder(file, false, 0);
     }
 
-    static PathWatcherBuilder watchDir(Path dir) {
-        return new PathWatcherBuilder(dir, true);
+    static PathWatcherBuilder watchDir(Path dir, int maxDepth) {
+        return new PathWatcherBuilder(dir, true, maxDepth);
     }
 }

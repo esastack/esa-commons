@@ -9,14 +9,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -28,13 +34,15 @@ class PathWatcherImpl implements PathWatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PathWatcherImpl.class);
     private final Path path;
-    private final boolean isDir;
+    private final boolean watchPathIsDir;
+    private final int maxDepth;
+    private final Map<WatchKey, Path> watchKeyPathMap;
     private final ArrayList<WatchEvent.Kind<?>> events = new ArrayList<>(4);
-    private Consumer<WatchEventContext<?>> create;
-    private Consumer<WatchEventContext<?>> delete;
-    private Consumer<WatchEventContext<?>> modify;
-    private Consumer<WatchEventContext<?>> overflow;
-    private WatchService watchService;
+    private final Consumer<WatchEventContext<?>> create;
+    private final Consumer<WatchEventContext<?>> delete;
+    private final Consumer<WatchEventContext<?>> modify;
+    private final Consumer<WatchEventContext<?>> overflow;
+    private final WatchService watchService;
     private final WatchEvent.Modifier[] modifiers;
     private final long modifyDelay;
 
@@ -45,7 +53,8 @@ class PathWatcherImpl implements PathWatcher {
     private volatile boolean stopped = false;
 
     PathWatcherImpl(Path path,
-                    boolean isDir,
+                    boolean watchPathIsDir,
+                    int maxDepth,
                     Consumer<WatchEventContext<?>> create,
                     Consumer<WatchEventContext<?>> delete,
                     Consumer<WatchEventContext<?>> modify,
@@ -55,53 +64,36 @@ class PathWatcherImpl implements PathWatcher {
                     Executor executor,
                     ScheduledExecutorService modifyDelayScheduler) {
         Checks.checkNotNull(path, "path");
+        Checks.checkArg(maxDepth >= 0, "MaxDepth should be >= 0!");
         this.path = path;
-        this.isDir = isDir;
-        this.modifiers = modifiers;
-        if (create != null) {
-            this.create = create;
-            events.add(StandardWatchEventKinds.ENTRY_CREATE);
-        }
-        if (delete != null) {
-            this.delete = delete;
-            events.add(StandardWatchEventKinds.ENTRY_DELETE);
-        }
-        if (modify != null) {
-            this.modify = modify;
-            events.add(StandardWatchEventKinds.ENTRY_MODIFY);
-        }
-        if (overflow != null) {
-            this.overflow = overflow;
-            events.add(StandardWatchEventKinds.OVERFLOW);
-        }
-        if (events.size() == 0) {
-            throw new IllegalStateException("No processors of WatchEventContext!" +
-                    "Please add processors of WatchEventContext by call of on...()," +
-                    "such as onCreate().");
-        }
-
-        if (executor == null) {
-            this.executor = defaultExecutor("FileWatcher-Executor-" + path);
+        this.watchPathIsDir = watchPathIsDir;
+        this.maxDepth = maxDepth;
+        this.modifiers = modifiers == null ? new WatchEvent.Modifier[0] : modifiers;
+        if (watchPathIsDir) {
+            this.watchKeyPathMap = new HashMap<>();
         } else {
-            this.executor = executor;
+            this.watchKeyPathMap = null;
         }
 
+        this.create = doIfConsumerNotNull(create, () -> events.add(StandardWatchEventKinds.ENTRY_CREATE));
+        this.delete = doIfConsumerNotNull(delete, () -> events.add(StandardWatchEventKinds.ENTRY_DELETE));
+        this.modify = doIfConsumerNotNull(modify, () -> events.add(StandardWatchEventKinds.ENTRY_MODIFY));
+        this.overflow = doIfConsumerNotNull(overflow, () -> events.add(StandardWatchEventKinds.OVERFLOW));
+        Checks.checkArg(events.size() == 0, "No processors of WatchEventContext!" +
+                "Please add processors of WatchEventContext by call of on...(),such as onCreate().");
+
+        this.executor = getExecutor(executor, path);
         this.modifyDelay = modifyDelay;
-        if (modifyDelay > 0) {
-            this.eventSet = new ConcurrentHashSet<>();
-            if (modifyDelayScheduler == null) {
-                this.modifyDelayScheduler =
-                        defaultScheduler("FileWatcher-ModifyDelayScheduler-" + path);
-            } else {
-                this.modifyDelayScheduler = modifyDelayScheduler;
-            }
-        } else {
-            this.eventSet = null;
-            this.modifyDelayScheduler = null;
+        this.eventSet = modifyDelay > 0 ? new ConcurrentHashSet<>() : null;
+        this.modifyDelayScheduler = getModifyDelayScheduler(modifyDelayScheduler, path);
+
+        try {
+            this.watchService = FileSystems.getDefault().newWatchService();
+        } catch (IOException e) {
+            throw new WatchException(e);
         }
 
-        init();
-        register();
+        initDir();
     }
 
     @Override
@@ -115,6 +107,8 @@ class PathWatcherImpl implements PathWatcher {
             }
             started = true;
         }
+        final WatchEvent.Kind<?>[] kinds = events.toArray(new WatchEvent.Kind[0]);
+        register(path, maxDepth, kinds);
         executor.execute(() -> {
             //If stop is executed firstly, it will end directly at start()
             if (!stopped) {
@@ -158,34 +152,41 @@ class PathWatcherImpl implements PathWatcher {
             return;
         }
 
+        final Path path;
+        if (watchPathIsDir) {
+            path = watchKeyPathMap.get(wk);
+        } else {
+            path = this.path;
+        }
+
         for (WatchEvent<?> event : wk.pollEvents()) {
             //如果不是目录，且修改的文件不是指定文件，则跳过
-            if (!isDir && !path.endsWith(event.context().toString())) {
+            if (!watchPathIsDir && !path.endsWith(event.context().toString())) {
                 continue;
             }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                create.accept(createWatchEventContext(event));
+                create.accept(createWatchEventContext(event, path));
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                 if (modifyDelay > 0) {
-                    delayPushModifyEvent(createWatchEventContext(event));
+                    delayPushModifyEvent(createWatchEventContext(event, path));
                 } else {
-                    modify.accept(createWatchEventContext(event));
+                    modify.accept(createWatchEventContext(event, path));
                 }
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                delete.accept(createWatchEventContext(event));
+                delete.accept(createWatchEventContext(event, path));
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                overflow.accept(createWatchEventContext(event));
+                overflow.accept(createWatchEventContext(event, path));
             }
         }
         wk.reset();
     }
 
-    private void init() {
+    private void initDir() {
         //创建不存在的目录或父目录
         try {
             if (!Files.exists(this.path, LinkOption.NOFOLLOW_LINKS)) {
-                if (isDir) {
+                if (watchPathIsDir) {
                     Files.createDirectories(this.path);
                 } else {
                     Files.createDirectories(this.path.getParent());
@@ -196,17 +197,29 @@ class PathWatcherImpl implements PathWatcher {
         }
     }
 
-    private void register() {
+    private void register(Path path, int maxDepth, WatchEvent.Kind<?>[] kinds) {
         try {
-            watchService = FileSystems.getDefault().newWatchService();
-            final WatchEvent.Kind<?>[] kinds = events.toArray(new WatchEvent.Kind[0]);
-            if (isDir) {
-                path.register(watchService, kinds,
-                        modifiers == null ? new WatchEvent.Modifier[0] : modifiers);
+            final WatchKey key;
+            if (watchPathIsDir) {
+                key = path.register(watchService, kinds, modifiers);
+                watchKeyPathMap.put(key, path);
             } else {
-                path.getParent().register(watchService, kinds,
-                        modifiers == null ? new WatchEvent.Modifier[0] : modifiers);
+                path.getParent().register(watchService, kinds, modifiers);
             }
+
+            // recursively register the directory of the next level
+            if (maxDepth > 1) {
+                //traverse all subdirectories and join listening
+                Files.walkFileTree(path, EnumSet.noneOf(FileVisitOption.class), maxDepth,
+                        new SimpleFileVisitor<Path>() {
+                            @Override
+                            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                                register(dir, 0, kinds);//继续添加目录
+                                return super.postVisitDirectory(dir, exc);
+                            }
+                        });
+            }
+
         } catch (IOException e) {
             throw new WatchException(e);
         }
@@ -233,8 +246,8 @@ class PathWatcherImpl implements PathWatcher {
 
     }
 
-    private <T> WatchEventContext<T> createWatchEventContext(WatchEvent<T> event) {
-        if (isDir) {
+    private <T> WatchEventContext<T> createWatchEventContext(WatchEvent<T> event, Path path) {
+        if (watchPathIsDir) {
             return new WatchEventContextImpl<>(event, new File(path.toFile()
                     , event.context().toString()));
         } else {
@@ -246,6 +259,32 @@ class PathWatcherImpl implements PathWatcher {
         Checks.checkNotNull(modifyDelayScheduler, "modifyDelayScheduler");
         synchronized (modifyDelayScheduler) {
             runnable.run();
+        }
+    }
+
+    private static Consumer<WatchEventContext<?>> doIfConsumerNotNull(Consumer<WatchEventContext<?>> consumer,
+                                                                      Runnable doIfConsumerNotNull) {
+        if (consumer == null) {
+            return null;
+        } else {
+            doIfConsumerNotNull.run();
+            return consumer;
+        }
+    }
+
+    private static ScheduledExecutorService getModifyDelayScheduler(ScheduledExecutorService scheduler, Path path) {
+        if (scheduler == null) {
+            return defaultScheduler("FileWatcher-ModifyDelayScheduler-" + path);
+        } else {
+            return scheduler;
+        }
+    }
+
+    private static Executor getExecutor(Executor executor, Path path) {
+        if (executor == null) {
+            return defaultExecutor("FileWatcher-Executor-" + path);
+        } else {
+            return executor;
         }
     }
 
