@@ -38,14 +38,18 @@ class FileWatcherImpl extends AbstractPathWatcher {
 
     @Override
     File getFile(WatchEvent<?> event, WatchKey wk) {
-        return path.toFile();
+        if (path.endsWith(event.context().toString())) {
+            return path.toFile();
+        } else {
+            return null;
+        }
     }
 
     @Override
     void initDir(Path root) {
         try {
-            if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
-                Files.createDirectories(path.getParent());
+            if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
+                Files.createDirectories(root.getParent());
             }
         } catch (IOException e) {
             throw new WatchException(e);
