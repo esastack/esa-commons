@@ -124,10 +124,9 @@ class FileWatcherImpl implements FileWatcher {
         stopped = true;
         IOUtils.closeQuietly(watchService);
 
-        //Call shutdown now to discard the modify event in the queue
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
         //modifyDelayScheduler after modifyDelayScheduler is shutdown after stop
-        atomicSchedulerOperation(modifyDelayScheduler::shutdownNow);
+        atomicSchedulerOperation(modifyDelayScheduler::shutdown);
     }
 
     private void watch() {
@@ -206,12 +205,9 @@ class FileWatcherImpl implements FileWatcher {
     }
 
     private void atomicSchedulerOperation(Runnable runnable) {
-        if (modifyDelayScheduler != null) {
-            synchronized (modifyDelayScheduler) {
-                runnable.run();
-            }
-        } else {
-            throw new NullPointerException("modifyDelayScheduler");
+        Checks.checkNotNull(modifyDelayScheduler,"modifyDelayScheduler");
+        synchronized (modifyDelayScheduler) {
+            runnable.run();
         }
     }
 
