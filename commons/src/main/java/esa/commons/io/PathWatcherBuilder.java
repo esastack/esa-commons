@@ -73,9 +73,19 @@ public class PathWatcherBuilder {
     }
 
     public PathWatcher build() {
-        return new PathWatcherImpl(path,
-                watchPathIsDir,
-                maxDepth,
+        if (watchPathIsDir) {
+            return new DirWatcherImpl(path,
+                    maxDepth,
+                    create,
+                    delete,
+                    modify,
+                    overflow,
+                    modifiers,
+                    modifyDelay,
+                    executor,
+                    modifyDelayScheduler);
+        }
+        return new FileWatcherImpl(path,
                 create,
                 delete,
                 modify,
