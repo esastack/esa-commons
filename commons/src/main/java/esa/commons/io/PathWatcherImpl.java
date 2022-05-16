@@ -5,6 +5,7 @@ import esa.commons.concurrent.ConcurrentHashSet;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -164,17 +165,17 @@ class PathWatcherImpl implements PathWatcher {
             }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                create.accept(new WatchEventContextImpl<>(event, path, isDir));
+                create.accept(createWatchEventContext(event));
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                 if (modifyDelay > 0) {
-                    delayPushModifyEvent(new WatchEventContextImpl<>(event, path, isDir));
+                    delayPushModifyEvent(createWatchEventContext(event));
                 } else {
-                    modify.accept(new WatchEventContextImpl<>(event, path, isDir));
+                    modify.accept(createWatchEventContext(event));
                 }
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                delete.accept(new WatchEventContextImpl<>(event, path, isDir));
+                delete.accept(createWatchEventContext(event));
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                overflow.accept(new WatchEventContextImpl<>(event, path, isDir));
+                overflow.accept(createWatchEventContext(event));
             }
         }
         wk.reset();
@@ -230,6 +231,15 @@ class PathWatcherImpl implements PathWatcher {
             }
         });
 
+    }
+
+    private <T> WatchEventContext<T> createWatchEventContext(WatchEvent<T> event) {
+        if (isDir) {
+            return new WatchEventContextImpl<>(event, new File(path.toFile()
+                    , event.context().toString()));
+        } else {
+            return new WatchEventContextImpl<>(event, path.toFile());
+        }
     }
 
     private void atomicSchedulerOperation(Runnable runnable) {

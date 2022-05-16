@@ -1,12 +1,10 @@
 package esa.commons.io;
 
-import java.nio.file.Path;
+import java.io.File;
 import java.nio.file.WatchEvent;
 
 public interface WatchEventContext<T> {
     WatchEvent<T> event();
 
-    Path path();
-
-    boolean isDir();
+    File file();
 }

@@ -1,18 +1,16 @@
 package esa.commons.io;
 
-import java.nio.file.Path;
+import java.io.File;
 import java.nio.file.WatchEvent;
 
 class WatchEventContextImpl<T> implements WatchEventContext<T> {
 
     private final WatchEvent<T> event;
-    private final Path path;
-    private final boolean isDir;
+    private final File file;
 
-    WatchEventContextImpl(WatchEvent<T> event, Path path, boolean isDir) {
+    WatchEventContextImpl(WatchEvent<T> event, File file) {
         this.event = event;
-        this.path = path;
-        this.isDir = isDir;
+        this.file = file;
     }
 
     @Override
@@ -21,21 +19,15 @@ class WatchEventContextImpl<T> implements WatchEventContext<T> {
     }
 
     @Override
-    public Path path() {
-        return path;
-    }
-
-    @Override
-    public boolean isDir() {
-        return isDir;
+    public File file() {
+        return file;
     }
 
     @Override
     public String toString() {
         return "WatchEventContextImpl{" +
                 "event=" + event +
-                ", path=" + path +
-                ", isDir=" + isDir +
+                ", file=" + file +
                 '}';
     }
 }
