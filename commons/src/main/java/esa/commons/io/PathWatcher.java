@@ -12,7 +12,7 @@ public interface PathWatcher {
         return new PathWatcherBuilder(file, false, 0);
     }
 
-    static PathWatcherBuilder watchDir(Path dir, int maxDepth) {
+    static PathWatcherBuilder watchFilesOfDir(Path dir, int maxDepth) {
         return new PathWatcherBuilder(dir, true, maxDepth);
     }
 }
