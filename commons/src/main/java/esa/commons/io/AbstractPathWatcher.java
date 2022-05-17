@@ -163,7 +163,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
             return;
         }
 
-        final String eventKey = ctx.event().context().toString() + ctx.event().kind().name();
+        final String eventKey = ctx.file().getAbsolutePath() + ctx.event().kind().name();
         if (eventSet.contains(eventKey)) {
             return;
         }
