@@ -9,18 +9,14 @@ import java.util.concurrent.TimeUnit;
  */
 public interface PathWatcher {
 
-    //TODO 增加注释
     void start();
 
-    //TODO 增加注释
     boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException;
 
-    //TODO 增加注释
     static PathWatcherBuilder watchFile(Path file) {
         return new PathWatcherBuilder(file, false, 0);
     }
 
-    //TODO 增加注释
     static PathWatcherBuilder watchDir(Path dir, int maxDepth) {
         return new PathWatcherBuilder(dir, true, maxDepth);
     }

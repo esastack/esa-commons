@@ -7,7 +7,6 @@ import java.nio.file.WatchEvent;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
-//TODO 增加注释
 public class PathWatcherBuilder {
 
     private final Path path;
@@ -28,36 +27,30 @@ public class PathWatcherBuilder {
         this.maxDepth = maxDepth;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder onCreate(Consumer<WatchEventContext<?>> create) {
         this.create = create;
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder onDelete(Consumer<WatchEventContext<?>> delete) {
         this.delete = delete;
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder onModify(Consumer<WatchEventContext<?>> modify) {
         this.modify = modify;
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder onOverflow(Consumer<WatchEventContext<?>> overflow) {
         this.overflow = overflow;
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder delay(long delay) {
         return delay(delay, null);
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder delay(long delay, ScheduledExecutorService delayScheduler) {
         Checks.checkArg(delay >= 0, "delay should be >= 0.");
         this.delay = delay;
@@ -65,14 +58,12 @@ public class PathWatcherBuilder {
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcherBuilder modifiers(WatchEvent.Modifier[] modifiers) {
         Checks.checkNotNull(modifiers, "modifiers");
         this.modifiers = modifiers;
         return this;
     }
 
-    //TODO 增加注释
     public PathWatcher build() {
         if (watchPathIsDir) {
             return new DirWatcherImpl(path,
