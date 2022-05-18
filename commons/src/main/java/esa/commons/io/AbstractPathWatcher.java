@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 abstract class AbstractPathWatcher implements PathWatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPathWatcher.class);
-    private final Path root;
+    private final Path path;
     private final ArrayList<WatchEvent.Kind<?>> events = new ArrayList<>(4);
     private final Consumer<WatchEventContext<?>> create;
     private final Consumer<WatchEventContext<?>> delete;
@@ -51,7 +51,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
                         long delay,
                         ScheduledExecutorService delayScheduler) {
         Checks.checkNotNull(path, "path");
-        this.root = path;
+        this.path = path;
         this.modifiers = modifiers == null ? new WatchEvent.Modifier[0] : modifiers;
 
         this.create = doIfConsumerNotNull(create, () -> events.add(StandardWatchEventKinds.ENTRY_CREATE));
@@ -73,7 +73,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
             throw new WatchException(e);
         }
 
-        initDir(root);
+        initDir(path);
     }
 
     @Override
@@ -87,7 +87,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
             }
             started = true;
         }
-        register(root);
+        register(path);
         executor.execute(() -> {
             //If stop is executed firstly, it will end directly at start()
             if (!stopped) {
@@ -105,7 +105,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
                 return delayScheduler.awaitTermination(timeout, unit);
             }
         }
-        LOGGER.info("PathWatcher of {} is stopping!", root);
+        LOGGER.info("PathWatcher of {} is stopping!", path);
 
         //Set stop to true firstly , so that the watch() method will be terminated at the
         //first time when the watchService is closed,
@@ -130,7 +130,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
             try {
                 doWatch();
             } catch (Throwable e) {
-                LOGGER.error("Error occur when watch {}.", root, e);
+                LOGGER.error("Error occur when watch {}.", path, e);
             }
         }
     }
