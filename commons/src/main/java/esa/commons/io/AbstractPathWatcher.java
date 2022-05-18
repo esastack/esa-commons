@@ -200,6 +200,9 @@ abstract class AbstractPathWatcher implements PathWatcher {
         atomicSchedulerOperation(() -> {
             if (!stopped) {
                 delayScheduler.schedule(() -> {
+                    //Remove first and then call consumer.accept() to avoid the new event is removed
+                    //before it has been executed when the new event appears in the process of
+                    //consumer.accept().
                     eventSet.remove(eventKey);
                     consumer.accept(ctx);
                 }, delay, TimeUnit.MILLISECONDS);
