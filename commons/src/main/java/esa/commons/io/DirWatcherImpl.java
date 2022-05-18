@@ -74,19 +74,18 @@ public class DirWatcherImpl extends AbstractPathWatcher {
     }
 
     private void recursiveRegister(DirInfo dirInfo) {
-        try {
-            if (recursionEndCondition.apply(dirInfo)) {
-                return;
-            }
+        if (recursionEndCondition.apply(dirInfo)) {
+            return;
+        }
 
-            File dir = dirInfo.dir;
-            final WatchKey key = dir.toPath().register(watchService, kinds, modifiers);
-            watchKeyPathMap.put(key, dirInfo);
-            for (File childFile : Objects.requireNonNull(dir.listFiles(File::isDirectory))) {
-                recursiveRegister(new DirInfo(childFile, dirInfo.depth + 1));
-            }
+        File dir = dirInfo.dir;
+        try {
+            watchKeyPathMap.put(dir.toPath().register(watchService, kinds, modifiers), dirInfo);
         } catch (IOException e) {
             throw new WatchException(e);
+        }
+        for (File childFile : Objects.requireNonNull(dir.listFiles(File::isDirectory))) {
+            recursiveRegister(new DirInfo(childFile, dirInfo.depth + 1));
         }
     }
 
