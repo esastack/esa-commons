@@ -97,23 +97,32 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     @Override
-    public void stop() {
+    public boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException {
         if (stopped) {
-            return;
+            if (delayScheduler == null) {
+                return true;
+            } else {
+                return delayScheduler.awaitTermination(timeout, unit);
+            }
         }
         LOGGER.info("PathWatcher of {} is stopping!", root);
+
+        //Set stop to true firstly , so that the watch() method will be terminated at the
+        //first time when the watchService is closed,
         stopped = true;
         IOUtils.closeQuietly(watchService);
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
         //delayScheduler after delayScheduler is shutdown after stop
-        if (delay > 0) {
-            atomicSchedulerOperation(() -> {
-                if (!delayScheduler.isShutdown()) {
-                    delayScheduler.shutdown();
-                }
-            });
+        if (delayScheduler == null) {
+            return true;
         }
+        atomicSchedulerOperation(() -> {
+            if (!delayScheduler.isShutdown()) {
+                delayScheduler.shutdownNow();
+            }
+        });
+        return delayScheduler.awaitTermination(timeout, unit);
     }
 
     private void watch() {
@@ -130,10 +139,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
         WatchKey wk;
         try {
             wk = watchService.take();
-        } catch (ClosedWatchServiceException e) {
-            stop();
-            return;
-        } catch (InterruptedException e) {
+        } catch (ClosedWatchServiceException | InterruptedException e) {
             return;
         }
 
