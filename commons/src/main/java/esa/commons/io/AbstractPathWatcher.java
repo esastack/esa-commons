@@ -49,7 +49,6 @@ abstract class AbstractPathWatcher implements PathWatcher {
                         Consumer<WatchEventContext<?>> overflow,
                         WatchEvent.Modifier[] modifiers,
                         long delay,
-                        Executor executor,
                         ScheduledExecutorService delayScheduler) {
         Checks.checkNotNull(path, "path");
         this.root = path;
@@ -63,10 +62,10 @@ abstract class AbstractPathWatcher implements PathWatcher {
                 "Please add processors of WatchEventContext by call of on...(),such as onCreate().");
         this.kinds = events.toArray(new WatchEvent.Kind[0]);
 
-        this.executor = getExecutor(executor, path);
+        this.executor = executor(path);
         this.delay = delay;
         this.eventSet = delay > 0 ? new ConcurrentHashSet<>() : null;
-        this.delayScheduler = getdelayScheduler(delayScheduler, path);
+        this.delayScheduler = delayScheduler(delayScheduler, path);
 
         try {
             this.watchService = FileSystems.getDefault().newWatchService();
@@ -108,7 +107,13 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
         //delayScheduler after delayScheduler is shutdown after stop
-        atomicSchedulerOperation(delayScheduler::shutdown);
+        if (delay > 0) {
+            atomicSchedulerOperation(() -> {
+                if (!delayScheduler.isShutdown()) {
+                    delayScheduler.shutdown();
+                }
+            });
+        }
     }
 
     private void watch() {
@@ -151,9 +156,9 @@ abstract class AbstractPathWatcher implements PathWatcher {
         wk.reset();
     }
 
-    abstract void initDir(Path root);
+    abstract void initDir(Path path);
 
-    abstract void register(Path root);
+    abstract void register(Path path);
 
     abstract File getFile(WatchEvent<?> event, WatchKey wk);
 
@@ -199,7 +204,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
     }
 
-    private static ScheduledExecutorService getdelayScheduler(ScheduledExecutorService scheduler, Path path) {
+    private static ScheduledExecutorService delayScheduler(ScheduledExecutorService scheduler, Path path) {
         if (scheduler == null) {
             return defaultScheduler("FileWatcher-delayScheduler-" + path);
         } else {
@@ -207,27 +212,19 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
     }
 
-    private static Executor getExecutor(Executor executor, Path path) {
-        if (executor == null) {
-            return defaultExecutor("FileWatcher-Executor-" + path);
-        } else {
-            return executor;
-        }
-    }
-
     /**
-     * The default executor does not share threads to avoid the bad influence of FileWatchers among
+     * The executor does not share threads to avoid the bad influence of FileWatchers among
      * multiple components.
      * <p>
      * When the command execution ends, the thread resource will be recycled automatically.This means
      * when the user stops FileWatcher, the thread resources will be automatically recycled without
      * other processing.
      *
-     * @param name executorName
+     * @param path path
      * @return executor
      */
-    private static Executor defaultExecutor(String name) {
-        return command -> new Thread(command, name).start();
+    private static Executor executor(Path path) {
+        return command -> new Thread(command, "FileWatcher-Executor-" + path).start();
     }
 
     /**

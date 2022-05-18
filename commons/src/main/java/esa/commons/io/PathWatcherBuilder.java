@@ -4,7 +4,6 @@ import esa.commons.Checks;
 
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
@@ -17,7 +16,6 @@ public class PathWatcherBuilder {
     private Consumer<WatchEventContext<?>> delete;
     private Consumer<WatchEventContext<?>> modify;
     private Consumer<WatchEventContext<?>> overflow;
-    private Executor executor;
     private ScheduledExecutorService delayScheduler;
     private WatchEvent.Modifier[] modifiers;
     private long delay = 200;
@@ -66,12 +64,6 @@ public class PathWatcherBuilder {
         return this;
     }
 
-    public PathWatcherBuilder customExecutor(Executor executor) {
-        Checks.checkNotNull(executor, "executor");
-        this.executor = executor;
-        return this;
-    }
-
     public PathWatcher build() {
         if (watchPathIsDir) {
             return new DirWatcherImpl(path,
@@ -82,7 +74,6 @@ public class PathWatcherBuilder {
                     overflow,
                     modifiers,
                     delay,
-                    executor,
                     delayScheduler);
         }
         return new FileWatcherImpl(path,
@@ -92,7 +83,6 @@ public class PathWatcherBuilder {
                 overflow,
                 modifiers,
                 delay,
-                executor,
                 delayScheduler);
     }
 }

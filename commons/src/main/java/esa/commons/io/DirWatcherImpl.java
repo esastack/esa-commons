@@ -13,14 +13,14 @@ import java.nio.file.WatchKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class DirWatcherImpl extends AbstractPathWatcher {
 
     private final Map<WatchKey, DirInfo> watchKeyPathMap = new HashMap<>();
-    private final int maxDepth;
+    private final Function<DirInfo, Boolean> recursionEndCondition;
 
     DirWatcherImpl(Path path,
                    int maxDepth,
@@ -30,7 +30,6 @@ public class DirWatcherImpl extends AbstractPathWatcher {
                    Consumer<WatchEventContext<?>> overflow,
                    WatchEvent.Modifier[] modifiers,
                    long delay,
-                   Executor executor,
                    ScheduledExecutorService delayScheduler) {
         super(path,
                 create,
@@ -39,10 +38,28 @@ public class DirWatcherImpl extends AbstractPathWatcher {
                 overflow,
                 modifiers,
                 delay,
-                executor,
                 delayScheduler);
         Checks.checkArg(maxDepth >= 0, "MaxDepth should be >= 0!");
-        this.maxDepth = maxDepth;
+        this.recursionEndCondition =
+                dirInfo -> dirInfo.depth > maxDepth || !dirInfo.dir.isDirectory();
+    }
+
+    @Override
+    void initDir(Path root) {
+        if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
+            try {
+                Files.createDirectories(root);
+            } catch (IOException e) {
+                throw new WatchException(e);
+            }
+        } else if (!root.toFile().isDirectory()) {
+            throw new IllegalStateException("Path(" + root + ") is not a directory!");
+        }
+    }
+
+    @Override
+    void register(Path root) {
+        recursiveRegister(new DirInfo(root.toFile(), 0));
     }
 
     @Override
@@ -51,57 +68,22 @@ public class DirWatcherImpl extends AbstractPathWatcher {
         File file = new File(dirInfo.dir, event.context().toString());
 
         if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-            if (file.isDirectory()) {
-                register(file, dirInfo.currentDepth + 1);
-            }
-        } else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
-            //Folder modification events are not notified
-            if (file.isDirectory()) {
-                return null;
-            }
+            recursiveRegister(new DirInfo(file, dirInfo.depth + 1));
         }
         return file;
     }
 
-    @Override
-    void initDir(Path root) {
+    private void recursiveRegister(DirInfo dirInfo) {
         try {
-            if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
-                Files.createDirectories(root);
+            if (recursionEndCondition.apply(dirInfo)) {
+                return;
             }
-        } catch (IOException e) {
-            throw new WatchException(e);
-        }
-    }
 
-    @Override
-    void register(Path root) {
-        File file = root.toFile();
-        if (!file.exists()) {
-            throw new IllegalStateException("File(" + file + ") doesn't exist!");
-        }
-        if (!file.isDirectory()) {
-            throw new IllegalStateException("File(" + file + ") should be a directory!");
-        }
-        register(file, 0);
-    }
-
-    private void register(File file,
-                          int currentDepth) {
-
-        if (currentDepth > maxDepth) {
-            return;
-        }
-
-        try {
-            final WatchKey key;
-
-            key = file.toPath().register(watchService, kinds, modifiers);
-            watchKeyPathMap.put(key, new DirInfo(file, currentDepth));
-            for (File childFile : Objects.requireNonNull(file.listFiles(File::isDirectory))) {
-                if (childFile.isDirectory()) {
-                    register(childFile, currentDepth + 1);
-                }
+            File dir = dirInfo.dir;
+            final WatchKey key = dir.toPath().register(watchService, kinds, modifiers);
+            watchKeyPathMap.put(key, dirInfo);
+            for (File childFile : Objects.requireNonNull(dir.listFiles(File::isDirectory))) {
+                recursiveRegister(new DirInfo(childFile, dirInfo.depth + 1));
             }
         } catch (IOException e) {
             throw new WatchException(e);
@@ -110,11 +92,11 @@ public class DirWatcherImpl extends AbstractPathWatcher {
 
     private static final class DirInfo {
         private final File dir;
-        private final int currentDepth;
+        private final int depth;
 
-        private DirInfo(File dir, int currentDepth) {
+        private DirInfo(File dir, int depth) {
             this.dir = dir;
-            this.currentDepth = currentDepth;
+            this.depth = depth;
         }
     }
 

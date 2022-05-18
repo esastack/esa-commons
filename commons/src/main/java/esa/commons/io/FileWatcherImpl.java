@@ -7,7 +7,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
@@ -22,7 +21,6 @@ class FileWatcherImpl extends AbstractPathWatcher {
                     Consumer<WatchEventContext<?>> overflow,
                     WatchEvent.Modifier[] modifiers,
                     long delay,
-                    Executor executor,
                     ScheduledExecutorService delayScheduler) {
         super(path,
                 create,
@@ -31,9 +29,28 @@ class FileWatcherImpl extends AbstractPathWatcher {
                 overflow,
                 modifiers,
                 delay,
-                executor,
                 delayScheduler);
         this.path = path;
+    }
+
+    @Override
+    void initDir(Path path) {
+        if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+            try {
+                Files.createDirectories(path.getParent());
+            } catch (IOException e) {
+                throw new WatchException(e);
+            }
+        }
+    }
+
+    @Override
+    void register(Path path) {
+        try {
+            path.getParent().register(watchService, kinds, modifiers);
+        } catch (IOException e) {
+            throw new WatchException(e);
+        }
     }
 
     @Override
@@ -42,26 +59,6 @@ class FileWatcherImpl extends AbstractPathWatcher {
             return path.toFile();
         } else {
             return null;
-        }
-    }
-
-    @Override
-    void initDir(Path root) {
-        try {
-            if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
-                Files.createDirectories(root.getParent());
-            }
-        } catch (IOException e) {
-            throw new WatchException(e);
-        }
-    }
-
-    @Override
-    void register(Path root) {
-        try {
-            root.getParent().register(watchService, kinds, modifiers);
-        } catch (IOException e) {
-            throw new WatchException(e);
         }
     }
 }
