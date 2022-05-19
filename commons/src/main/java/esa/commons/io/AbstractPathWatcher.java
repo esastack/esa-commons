@@ -55,8 +55,11 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private final long delay;
     private final ScheduledExecutorService delayScheduler;
     private final Set<String> eventSet;
-    private volatile boolean started = false;
-    private volatile boolean stopped = false;
+    private volatile STATUS status = STATUS.UN_START;
+
+    private enum STATUS {
+        UN_START, STARTED, STOPPED
+    }
 
     AbstractPathWatcher(Path path,
                         Consumer<WatchEventContext> create,
@@ -95,27 +98,24 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     @Override
     public void start() {
-        if (started) {
-            throw new IllegalStateException("FileWatcher had started!");
-        }
         synchronized (this) {
-            if (started) {
-                throw new IllegalStateException("FileWatcher had started!");
+            if (status != STATUS.UN_START) {
+                throw new IllegalStateException("FileWatcher had " + (status == STATUS.STARTED ? "started" : "stopped") + "!");
             }
-            started = true;
+            status = STATUS.STARTED;
         }
         register(path);
         executor.execute(() -> {
             //If stop is executed firstly, it will end directly at start()
-            if (!stopped) {
+            if (status == STATUS.STARTED) {
                 watch();
             }
         });
     }
 
     @Override
-    public boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException {
-        if (stopped) {
+    public synchronized boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException {
+        if (status == STATUS.STOPPED) {
             if (delayScheduler == null) {
                 return true;
             } else {
@@ -125,8 +125,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
         LOGGER.info("PathWatcher of {} is stopping!", path);
 
         //Set stop to true firstly , so that the watch() method will be terminated at the
-        //first time when the watchService is closed,
-        stopped = true;
+        //first time when the watchService is closed
+        status = STATUS.STOPPED;
         IOUtils.closeQuietly(watchService);
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
@@ -134,16 +134,15 @@ abstract class AbstractPathWatcher implements PathWatcher {
         if (delayScheduler == null) {
             return true;
         }
-        atomicSchedulerOperation(() -> {
-            if (!delayScheduler.isShutdown()) {
-                delayScheduler.shutdownNow();
-            }
-        });
+        if (!delayScheduler.isShutdown()) {
+            delayScheduler.shutdownNow();
+        }
+
         return delayScheduler.awaitTermination(timeout, unit);
     }
 
     private void watch() {
-        while (!stopped) {
+        while (status == STATUS.STARTED) {
             try {
                 doWatch();
             } catch (Throwable e) {
@@ -199,8 +198,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
         //delayScheduler when delayScheduler had shutdown after stop
-        atomicSchedulerOperation(() -> {
-            if (!stopped) {
+        synchronized (this) {
+            if (status == STATUS.STARTED) {
                 delayScheduler.schedule(() -> {
                     //Remove first and then call consumer.accept() to avoid the new event is removed
                     //before it has been executed when the new event appears in the process of
@@ -209,7 +208,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
                     doPushEvent(ctx, consumer);
                 }, delay, TimeUnit.MILLISECONDS);
             }
-        });
+        }
     }
 
     private void doPushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
@@ -217,13 +216,6 @@ abstract class AbstractPathWatcher implements PathWatcher {
             consumer.accept(ctx);
         } catch (Throwable e) {
             LOGGER.error("Error occur when event({}) happens!", ctx, e);
-        }
-    }
-
-    private void atomicSchedulerOperation(Runnable runnable) {
-        Checks.checkNotNull(delayScheduler, "delayScheduler");
-        synchronized (delayScheduler) {
-            runnable.run();
         }
     }
 
