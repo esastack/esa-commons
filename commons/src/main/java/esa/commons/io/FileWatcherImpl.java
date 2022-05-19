@@ -32,10 +32,10 @@ class FileWatcherImpl extends AbstractPathWatcher {
     private final Path path;
 
     FileWatcherImpl(Path path,
-                    Consumer<WatchEventContext> create,
-                    Consumer<WatchEventContext> delete,
-                    Consumer<WatchEventContext> modify,
-                    Consumer<WatchEventContext> overflow,
+                    Consumer<EventContext> create,
+                    Consumer<EventContext> delete,
+                    Consumer<EventContext> modify,
+                    Consumer<EventContext> overflow,
                     WatchEvent.Modifier[] modifiers,
                     long delay,
                     ScheduledExecutorService delayScheduler) {

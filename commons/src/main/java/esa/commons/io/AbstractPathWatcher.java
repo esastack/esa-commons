@@ -43,10 +43,10 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPathWatcher.class);
     private final Path path;
     private final ArrayList<WatchEvent.Kind<?>> events = new ArrayList<>(4);
-    private final Consumer<WatchEventContext> create;
-    private final Consumer<WatchEventContext> delete;
-    private final Consumer<WatchEventContext> modify;
-    private final Consumer<WatchEventContext> overflow;
+    private final Consumer<EventContext> create;
+    private final Consumer<EventContext> delete;
+    private final Consumer<EventContext> modify;
+    private final Consumer<EventContext> overflow;
     final WatchService watchService;
     final WatchEvent.Modifier[] modifiers;
     final WatchEvent.Kind<?>[] kinds;
@@ -55,17 +55,17 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private final long delay;
     private final ScheduledExecutorService delayScheduler;
     private final Set<String> eventSet;
-    private volatile STATUS status = STATUS.UN_START;
+    private volatile Status status = Status.UN_START;
 
-    private enum STATUS {
+    private enum Status {
         UN_START, STARTED, STOPPED
     }
 
     AbstractPathWatcher(Path path,
-                        Consumer<WatchEventContext> create,
-                        Consumer<WatchEventContext> delete,
-                        Consumer<WatchEventContext> modify,
-                        Consumer<WatchEventContext> overflow,
+                        Consumer<EventContext> create,
+                        Consumer<EventContext> delete,
+                        Consumer<EventContext> modify,
+                        Consumer<EventContext> overflow,
                         WatchEvent.Modifier[] modifiers,
                         long delay,
                         ScheduledExecutorService delayScheduler) {
@@ -77,8 +77,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
         this.delete = doIfConsumerNotNull(delete, () -> events.add(StandardWatchEventKinds.ENTRY_DELETE));
         this.modify = doIfConsumerNotNull(modify, () -> events.add(StandardWatchEventKinds.ENTRY_MODIFY));
         this.overflow = doIfConsumerNotNull(overflow, () -> events.add(StandardWatchEventKinds.OVERFLOW));
-        Checks.checkArg(events.size() > 0, "No processors of WatchEventContext!" +
-                "Please add processors of WatchEventContext by call of on...(),such as onCreate().");
+        Checks.checkArg(events.size() > 0, "No processors of EventContext!" +
+                "Please add processors of EventContext by call of on...(),such as onCreate().");
         this.kinds = events.toArray(new WatchEvent.Kind[0]);
 
         this.executor = executor(path);
@@ -99,16 +99,16 @@ abstract class AbstractPathWatcher implements PathWatcher {
     @Override
     public void start() {
         synchronized (this) {
-            if (status != STATUS.UN_START) {
+            if (status != Status.UN_START) {
                 throw new IllegalStateException("FileWatcher had " +
-                        (status == STATUS.STARTED ? "started" : "stopped") + "!");
+                        (status == Status.STARTED ? "started" : "stopped") + "!");
             }
-            status = STATUS.STARTED;
+            status = Status.STARTED;
         }
         register(path);
         executor.execute(() -> {
             //If stop is executed firstly, it will end directly at start()
-            if (status == STATUS.STARTED) {
+            if (status == Status.STARTED) {
                 watch();
             }
         });
@@ -116,7 +116,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     @Override
     public synchronized boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException {
-        if (status == STATUS.STOPPED) {
+        if (status == Status.STOPPED) {
             if (delayScheduler == null) {
                 return true;
             } else {
@@ -127,7 +127,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
         //Set stop to true firstly , so that the watch() method will be terminated at the
         //first time when the watchService is closed
-        status = STATUS.STOPPED;
+        status = Status.STOPPED;
         IOUtils.closeQuietly(watchService);
 
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
@@ -143,11 +143,11 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     private void watch() {
-        while (status == STATUS.STARTED) {
+        while (status == Status.STARTED) {
             try {
                 doWatch();
             } catch (Throwable e) {
-                LOGGER.error("Error occur when watch {}.", path, e);
+                LOGGER.error("Error occurs when watch {}.", path, e);
             }
         }
     }
@@ -167,13 +167,13 @@ abstract class AbstractPathWatcher implements PathWatcher {
             }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                pushEvent(new WatchEventContextImpl(event, file), create);
+                pushEvent(new EventContextImpl(event, file), create);
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                pushEvent(new WatchEventContextImpl(event, file), modify);
+                pushEvent(new EventContextImpl(event, file), modify);
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                pushEvent(new WatchEventContextImpl(event, file), delete);
+                pushEvent(new EventContextImpl(event, file), delete);
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                pushEvent(new WatchEventContextImpl(event, file), overflow);
+                pushEvent(new EventContextImpl(event, file), overflow);
             }
         }
         wk.reset();
@@ -185,7 +185,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     abstract File getFile(WatchEvent<?> event, WatchKey wk);
 
-    private void pushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
+    private void pushEvent(EventContext ctx, Consumer<EventContext> consumer) {
         if (delay <= 0L) {
             doPushEvent(ctx, consumer);
             return;
@@ -200,7 +200,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
         //Use atomic operations to avoid unnecessary exceptions caused by adding tasks to
         //delayScheduler when delayScheduler had shutdown after stop
         synchronized (this) {
-            if (status == STATUS.STARTED) {
+            if (status == Status.STARTED) {
                 delayScheduler.schedule(() -> {
                     //Remove first and then call consumer.accept() to avoid the new event is removed
                     //before it has been executed when the new event appears in the process of
@@ -212,15 +212,15 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
     }
 
-    private void doPushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
+    private void doPushEvent(EventContext ctx, Consumer<EventContext> consumer) {
         try {
             consumer.accept(ctx);
         } catch (Throwable e) {
-            LOGGER.error("Error occur when event({}) happens!", ctx, e);
+            LOGGER.error("Error occurs when event({}) happens!", ctx, e);
         }
     }
 
-    private static Consumer<WatchEventContext> doIfConsumerNotNull(Consumer<WatchEventContext> consumer,
+    private static Consumer<EventContext> doIfConsumerNotNull(Consumer<EventContext> consumer,
                                                                    Runnable doIfConsumerNotNull) {
         if (consumer == null) {
             return null;

@@ -66,18 +66,18 @@ public interface PathWatcher {
      */
     boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException;
 
-    interface WatchEventContext {
+    interface EventContext {
         WatchEvent<?> event();
 
         File file();
     }
 
-    class WatchEventContextImpl implements WatchEventContext {
+    class EventContextImpl implements EventContext {
 
         private final WatchEvent<?> event;
         private final File file;
 
-        WatchEventContextImpl(WatchEvent<?> event, File file) {
+        EventContextImpl(WatchEvent<?> event, File file) {
             this.event = event;
             this.file = file;
         }
@@ -94,7 +94,7 @@ public interface PathWatcher {
 
         @Override
         public String toString() {
-            return "WatchEventContextImpl{" +
+            return "EventContextImpl{" +
                     "event=" + event +
                     ", file=" + file +
                     '}';
