@@ -27,10 +27,10 @@ public class PathWatcherBuilder {
     private final Path path;
     private final boolean watchPathIsDir;
     private final int maxDepth;
-    private Consumer<WatchEventContext<?>> create;
-    private Consumer<WatchEventContext<?>> delete;
-    private Consumer<WatchEventContext<?>> modify;
-    private Consumer<WatchEventContext<?>> overflow;
+    private Consumer<PathWatcher.WatchEventContext> create;
+    private Consumer<PathWatcher.WatchEventContext> delete;
+    private Consumer<PathWatcher.WatchEventContext> modify;
+    private Consumer<PathWatcher.WatchEventContext> overflow;
     private ScheduledExecutorService delayScheduler;
     private WatchEvent.Modifier[] modifiers;
     private long delay = 200L;
@@ -42,22 +42,22 @@ public class PathWatcherBuilder {
         this.maxDepth = maxDepth;
     }
 
-    public PathWatcherBuilder onCreate(Consumer<WatchEventContext<?>> create) {
+    public PathWatcherBuilder onCreate(Consumer<PathWatcher.WatchEventContext> create) {
         this.create = create;
         return this;
     }
 
-    public PathWatcherBuilder onDelete(Consumer<WatchEventContext<?>> delete) {
+    public PathWatcherBuilder onDelete(Consumer<PathWatcher.WatchEventContext> delete) {
         this.delete = delete;
         return this;
     }
 
-    public PathWatcherBuilder onModify(Consumer<WatchEventContext<?>> modify) {
+    public PathWatcherBuilder onModify(Consumer<PathWatcher.WatchEventContext> modify) {
         this.modify = modify;
         return this;
     }
 
-    public PathWatcherBuilder onOverflow(Consumer<WatchEventContext<?>> overflow) {
+    public PathWatcherBuilder onOverflow(Consumer<PathWatcher.WatchEventContext> overflow) {
         this.overflow = overflow;
         return this;
     }

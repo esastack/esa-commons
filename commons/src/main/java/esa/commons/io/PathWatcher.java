@@ -15,7 +15,9 @@
  */
 package esa.commons.io;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -63,5 +65,40 @@ public interface PathWatcher {
      * @throws InterruptedException if interrupted while waiting
      */
     boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException;
+
+    interface WatchEventContext {
+        WatchEvent<?> event();
+
+        File file();
+    }
+
+    class WatchEventContextImpl implements WatchEventContext {
+
+        private final WatchEvent<?> event;
+        private final File file;
+
+        WatchEventContextImpl(WatchEvent<?> event, File file) {
+            this.event = event;
+            this.file = file;
+        }
+
+        @Override
+        public WatchEvent<?> event() {
+            return event;
+        }
+
+        @Override
+        public File file() {
+            return file;
+        }
+
+        @Override
+        public String toString() {
+            return "WatchEventContextImpl{" +
+                    "event=" + event +
+                    ", file=" + file +
+                    '}';
+        }
+    }
 
 }

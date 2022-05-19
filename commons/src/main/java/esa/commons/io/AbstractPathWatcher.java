@@ -43,10 +43,10 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPathWatcher.class);
     private final Path path;
     private final ArrayList<WatchEvent.Kind<?>> events = new ArrayList<>(4);
-    private final Consumer<WatchEventContext<?>> create;
-    private final Consumer<WatchEventContext<?>> delete;
-    private final Consumer<WatchEventContext<?>> modify;
-    private final Consumer<WatchEventContext<?>> overflow;
+    private final Consumer<WatchEventContext> create;
+    private final Consumer<WatchEventContext> delete;
+    private final Consumer<WatchEventContext> modify;
+    private final Consumer<WatchEventContext> overflow;
     final WatchService watchService;
     final WatchEvent.Modifier[] modifiers;
     final WatchEvent.Kind<?>[] kinds;
@@ -59,10 +59,10 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private volatile boolean stopped = false;
 
     AbstractPathWatcher(Path path,
-                        Consumer<WatchEventContext<?>> create,
-                        Consumer<WatchEventContext<?>> delete,
-                        Consumer<WatchEventContext<?>> modify,
-                        Consumer<WatchEventContext<?>> overflow,
+                        Consumer<WatchEventContext> create,
+                        Consumer<WatchEventContext> delete,
+                        Consumer<WatchEventContext> modify,
+                        Consumer<WatchEventContext> overflow,
                         WatchEvent.Modifier[] modifiers,
                         long delay,
                         ScheduledExecutorService delayScheduler) {
@@ -167,13 +167,13 @@ abstract class AbstractPathWatcher implements PathWatcher {
             }
             final WatchEvent.Kind<?> kind = event.kind();
             if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                pushEvent(new WatchEventContextImpl<>(event, file), create);
+                pushEvent(new WatchEventContextImpl(event, file), create);
             } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                pushEvent(new WatchEventContextImpl<>(event, file), modify);
+                pushEvent(new WatchEventContextImpl(event, file), modify);
             } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                pushEvent(new WatchEventContextImpl<>(event, file), delete);
+                pushEvent(new WatchEventContextImpl(event, file), delete);
             } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                pushEvent(new WatchEventContextImpl<>(event, file), overflow);
+                pushEvent(new WatchEventContextImpl(event, file), overflow);
             }
         }
         wk.reset();
@@ -185,7 +185,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     abstract File getFile(WatchEvent<?> event, WatchKey wk);
 
-    private void pushEvent(WatchEventContext<?> ctx, Consumer<WatchEventContext<?>> consumer) {
+    private void pushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
         if (delay <= 0L) {
             consumer.accept(ctx);
             return;
@@ -220,7 +220,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
         }
     }
 
-    private static Consumer<WatchEventContext<?>> doIfConsumerNotNull(Consumer<WatchEventContext<?>> consumer,
+    private static Consumer<WatchEventContext> doIfConsumerNotNull(Consumer<WatchEventContext> consumer,
                                                                       Runnable doIfConsumerNotNull) {
         if (consumer == null) {
             return null;

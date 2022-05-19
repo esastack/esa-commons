@@ -40,10 +40,10 @@ class DirWatcherImpl extends AbstractPathWatcher {
 
     DirWatcherImpl(Path path,
                    int maxDepth,
-                   Consumer<WatchEventContext<?>> create,
-                   Consumer<WatchEventContext<?>> delete,
-                   Consumer<WatchEventContext<?>> modify,
-                   Consumer<WatchEventContext<?>> overflow,
+                   Consumer<WatchEventContext> create,
+                   Consumer<WatchEventContext> delete,
+                   Consumer<WatchEventContext> modify,
+                   Consumer<WatchEventContext> overflow,
                    WatchEvent.Modifier[] modifiers,
                    long delay,
                    ScheduledExecutorService delayScheduler) {
