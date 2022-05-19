@@ -100,7 +100,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
     public void start() {
         synchronized (this) {
             if (status != STATUS.UN_START) {
-                throw new IllegalStateException("FileWatcher had " + (status == STATUS.STARTED ? "started" : "stopped") + "!");
+                throw new IllegalStateException("FileWatcher had " +
+                        (status == STATUS.STARTED ? "started" : "stopped") + "!");
             }
             status = STATUS.STARTED;
         }
