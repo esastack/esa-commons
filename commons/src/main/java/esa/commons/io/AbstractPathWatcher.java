@@ -97,21 +97,27 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     @Override
-    public void start() {
-        synchronized (this) {
-            if (status != Status.UN_START) {
-                throw new IllegalStateException("FileWatcher had " +
-                        (status == Status.STARTED ? "started" : "stopped") + "!");
-            }
-            status = Status.STARTED;
+    public synchronized void start() {
+        if (status != Status.UN_START) {
+            throw new IllegalStateException("FileWatcher had " +
+                    (status == Status.STARTED ? "started" : "stopped") + "!");
         }
-        register(path);
+        try {
+            register(path);
+        } catch (Throwable e) {
+            try {
+                stopAndWait(0L, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ignored) {
+            }
+            throw e;
+        }
         executor.execute(() -> {
             //If stop is executed firstly, it will end directly at start()
             if (status == Status.STARTED) {
                 watch();
             }
         });
+        status = Status.STARTED;
     }
 
     @Override
@@ -221,7 +227,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     private static Consumer<EventContext> doIfConsumerNotNull(Consumer<EventContext> consumer,
-                                                                   Runnable doIfConsumerNotNull) {
+                                                              Runnable doIfConsumerNotNull) {
         if (consumer == null) {
             return null;
         } else {
@@ -250,7 +256,11 @@ abstract class AbstractPathWatcher implements PathWatcher {
      * @return executor
      */
     private static Executor executor(Path path) {
-        return command -> new Thread(command, "FileWatcher-Executor-" + path).start();
+        return command -> {
+            Thread thread = new Thread(command, "FileWatcher-Executor-" + path);
+            thread.setDaemon(true);
+            thread.start();
+        };
     }
 
     /**
@@ -261,7 +271,10 @@ abstract class AbstractPathWatcher implements PathWatcher {
      * @return ScheduledExecutorService
      */
     private static ScheduledExecutorService defaultScheduler(String name) {
-        return Executors.newSingleThreadScheduledExecutor(r ->
-                new Thread(r, name));
+        return Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, name);
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 }
