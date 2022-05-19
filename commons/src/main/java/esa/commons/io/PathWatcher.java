@@ -24,15 +24,44 @@ import java.util.concurrent.TimeUnit;
  */
 public interface PathWatcher {
 
-    void start();
-
-    boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException;
-
+    /**
+     * Create PathWatcherBuilder of file.
+     *
+     * @param file file
+     * @return PathWatcherBuilder
+     */
     static PathWatcherBuilder watchFile(Path file) {
         return new PathWatcherBuilder(file, false, 0);
     }
 
+    /**
+     * Create PathWatcherBuilder of directory with the maximum depth of recursive directory.
+     *
+     * @param dir      directory
+     * @param maxDepth the maximum depth of recursive directory, 0 represents watch the
+     *                 first level files in the directory.
+     * @return PathWatcherBuilder
+     */
     static PathWatcherBuilder watchDir(Path dir, int maxDepth) {
         return new PathWatcherBuilder(dir, true, maxDepth);
     }
+
+    /**
+     * Start watch. If you want to stop then call stopAndWait().
+     */
+    void start();
+
+    /**
+     * Stop and blocks until all tasks have completed execution after a shutdownNow
+     * request, or the timeout occurs, or the current thread is interrupted, whichever
+     * happens first.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit    the time unit of the timeout argument
+     * @return {@code true} if this watcher stopped and
+     * {@code false} if the timeout elapsed before stop
+     * @throws InterruptedException if interrupted while waiting
+     */
+    boolean stopAndWait(long timeout, TimeUnit unit) throws InterruptedException;
+
 }
