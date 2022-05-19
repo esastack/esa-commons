@@ -15,6 +15,8 @@
  */
 package esa.commons.io;
 
+import esa.commons.ExceptionUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,7 +56,7 @@ class FileWatcherImpl extends AbstractPathWatcher {
             try {
                 Files.createDirectories(path.getParent());
             } catch (IOException e) {
-                throw new WatchException(e);
+                ExceptionUtils.throwException(e);
             }
         }
     }
@@ -64,7 +66,7 @@ class FileWatcherImpl extends AbstractPathWatcher {
         try {
             path.getParent().register(watchService, kinds, modifiers);
         } catch (IOException e) {
-            throw new WatchException(e);
+            ExceptionUtils.throwException(e);
         }
     }
 

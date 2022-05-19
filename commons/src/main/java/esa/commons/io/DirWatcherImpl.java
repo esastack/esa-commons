@@ -16,6 +16,7 @@
 package esa.commons.io;
 
 import esa.commons.Checks;
+import esa.commons.ExceptionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +66,7 @@ class DirWatcherImpl extends AbstractPathWatcher {
             try {
                 Files.createDirectories(root);
             } catch (IOException e) {
-                throw new WatchException(e);
+                ExceptionUtils.throwException(e);
             }
         } else if (!root.toFile().isDirectory()) {
             throw new IllegalStateException("Path(" + root + ") is not a directory!");
@@ -97,7 +98,7 @@ class DirWatcherImpl extends AbstractPathWatcher {
         try {
             watchKeyPathMap.put(dir.toPath().register(watchService, kinds, modifiers), dirInfo);
         } catch (IOException e) {
-            throw new WatchException(e);
+            ExceptionUtils.throwException(e);
         }
         for (File childFile : Objects.requireNonNull(dir.listFiles(File::isDirectory))) {
             recursiveRegister(new DirInfo(childFile, dirInfo.depth + 1));

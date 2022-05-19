@@ -16,6 +16,7 @@
 package esa.commons.io;
 
 import esa.commons.Checks;
+import esa.commons.ExceptionUtils;
 import esa.commons.concurrent.ConcurrentHashSet;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
@@ -82,12 +83,13 @@ abstract class AbstractPathWatcher implements PathWatcher {
         this.eventSet = delay > 0 ? new ConcurrentHashSet<>() : null;
         this.delayScheduler = delayScheduler(delayScheduler, path);
 
+        WatchService watchServiceTem = null;
         try {
-            this.watchService = FileSystems.getDefault().newWatchService();
+            watchServiceTem = FileSystems.getDefault().newWatchService();
         } catch (IOException e) {
-            throw new WatchException(e);
+            ExceptionUtils.throwException(e);
         }
-
+        this.watchService = watchServiceTem;
         initDir(path);
     }
 
