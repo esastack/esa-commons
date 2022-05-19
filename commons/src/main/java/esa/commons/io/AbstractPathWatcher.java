@@ -187,7 +187,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
 
     private void pushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
         if (delay <= 0L) {
-            consumer.accept(ctx);
+            doPushEvent(ctx, consumer);
             return;
         }
 
@@ -206,11 +206,18 @@ abstract class AbstractPathWatcher implements PathWatcher {
                     //before it has been executed when the new event appears in the process of
                     //consumer.accept().
                     eventSet.remove(eventKey);
-                    consumer.accept(ctx);
+                    doPushEvent(ctx, consumer);
                 }, delay, TimeUnit.MILLISECONDS);
             }
         });
+    }
 
+    private void doPushEvent(WatchEventContext ctx, Consumer<WatchEventContext> consumer) {
+        try {
+            consumer.accept(ctx);
+        } catch (Throwable e) {
+            LOGGER.error("Error occur when event({}) happens!", ctx, e);
+        }
     }
 
     private void atomicSchedulerOperation(Runnable runnable) {
@@ -221,7 +228,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
     }
 
     private static Consumer<WatchEventContext> doIfConsumerNotNull(Consumer<WatchEventContext> consumer,
-                                                                      Runnable doIfConsumerNotNull) {
+                                                                   Runnable doIfConsumerNotNull) {
         if (consumer == null) {
             return null;
         } else {
