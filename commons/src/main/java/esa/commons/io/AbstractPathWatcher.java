@@ -186,7 +186,7 @@ abstract class AbstractPathWatcher implements PathWatcher {
     abstract File getFile(WatchEvent<?> event, WatchKey wk);
 
     private void pushEvent(WatchEventContext<?> ctx, Consumer<WatchEventContext<?>> consumer) {
-        if (delay <= 0) {
+        if (delay <= 0L) {
             consumer.accept(ctx);
             return;
         }

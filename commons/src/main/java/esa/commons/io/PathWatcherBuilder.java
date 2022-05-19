@@ -33,7 +33,7 @@ public class PathWatcherBuilder {
     private Consumer<WatchEventContext<?>> overflow;
     private ScheduledExecutorService delayScheduler;
     private WatchEvent.Modifier[] modifiers;
-    private long delay = 200;
+    private long delay = 200L;
 
     PathWatcherBuilder(Path path, boolean watchPathIsDir, int maxDepth) {
         Checks.checkNotNull(path, "path");
@@ -67,7 +67,7 @@ public class PathWatcherBuilder {
     }
 
     public PathWatcherBuilder delay(long delay, ScheduledExecutorService delayScheduler) {
-        Checks.checkArg(delay >= 0, "delay should be >= 0.");
+        Checks.checkArg(delay >= 0L, "delay should be >= 0L.");
         this.delay = delay;
         this.delayScheduler = delayScheduler;
         return this;
