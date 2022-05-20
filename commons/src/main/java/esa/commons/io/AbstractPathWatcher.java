@@ -18,6 +18,7 @@ package esa.commons.io;
 import esa.commons.Checks;
 import esa.commons.ExceptionUtils;
 import esa.commons.concurrent.ConcurrentHashSet;
+import esa.commons.concurrent.ThreadFactories;
 import esa.commons.logging.Logger;
 import esa.commons.logging.LoggerFactory;
 
@@ -258,7 +259,9 @@ abstract class AbstractPathWatcher implements PathWatcher {
     private static Executor executor(Path path) {
         return command -> {
             Thread thread = new Thread(command, "FileWatcher-Executor-" + path);
-            thread.setDaemon(true);
+            if (!thread.isDaemon()) {
+                thread.setDaemon(true);
+            }
             thread.start();
         };
     }
@@ -271,10 +274,6 @@ abstract class AbstractPathWatcher implements PathWatcher {
      * @return ScheduledExecutorService
      */
     private static ScheduledExecutorService defaultScheduler(String name) {
-        return Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, name);
-            thread.setDaemon(true);
-            return thread;
-        });
+        return Executors.newSingleThreadScheduledExecutor(ThreadFactories.namedThreadFactory(name, true));
     }
 }
