@@ -16,11 +16,13 @@
 package esa.commons.io;
 
 import org.junit.jupiter.api.Test;
+import sun.security.action.GetPropertyAction;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileWatcherTest {
 
-    private final File file = new File("testWatch");
+    private static final File tmpdir = new File(AccessController
+            .doPrivileged(new GetPropertyAction("java.io.tmpdir")));
+    private static final File file = new File(tmpdir, "testWatch");
+
+    static {
+        file.deleteOnExit();
+    }
+
     private final Semaphore semaphore = new Semaphore(0);
 
     @Test

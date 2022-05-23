@@ -16,11 +16,13 @@
 package esa.commons.io;
 
 import org.junit.jupiter.api.Test;
+import sun.security.action.GetPropertyAction;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -31,11 +33,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DirWatcherTest {
 
-    private final File dir = new File("testWatch");
-    private final File zeroLevelDir = new File(dir, "zeroLevelDir");
-    private final File firstLevelDir = new File(zeroLevelDir, "firstLevelDir");
-    private final File firstLevelFile = new File(zeroLevelDir, "firstLevelFile");
-    private final File secondLevelFile = new File(firstLevelDir, "secondLevelFile");
+    private static final File tmpdir = new File(AccessController
+            .doPrivileged(new GetPropertyAction("java.io.tmpdir")));
+    private static final File dir = new File(tmpdir, "testWatch");
+    private static final File zeroLevelDir = new File(dir, "zeroLevelDir");
+    private static final File firstLevelDir = new File(zeroLevelDir, "firstLevelDir");
+    private static final File firstLevelFile = new File(zeroLevelDir, "firstLevelFile");
+    private static final File secondLevelFile = new File(firstLevelDir, "secondLevelFile");
+
+    static {
+        dir.deleteOnExit();
+    }
+
     private final Semaphore semaphore = new Semaphore(0);
     private volatile Function<File, Boolean> semaphoreCondition = (file) -> false;
 
