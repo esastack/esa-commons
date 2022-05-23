@@ -31,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DirWatcherTest {
 
+    private static final long TIMEOUT = 5000L;
+
     @Test
     void testWatch() throws IOException, InterruptedException {
         final File dir = FileTestUtils.newTemp("dir-watcher-test", "test-watch");
@@ -79,24 +81,24 @@ class DirWatcherTest {
 
         semaphore.condition((file) -> zeroLevelDir.getAbsolutePath().equals(file.getAbsolutePath()));
         zeroLevelDir.mkdir();
-        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.unWrap().tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
 
         semaphore.condition((file) -> firstLevelDir.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelDir.mkdir();
-        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.unWrap().tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
 
         semaphore.condition((file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelFile.createNewFile();
-        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.unWrap().tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
 
         semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         secondLevelFile.createNewFile();
-        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertFalse(semaphore.unWrap().tryAcquire(500L, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testModify(File dir,
@@ -116,16 +118,16 @@ class DirWatcherTest {
         try (OutputStream stream = new FileOutputStream(firstLevelFile)) {
             stream.write(1);
         }
-        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.unWrap().tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
 
         semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         try (OutputStream stream = new FileOutputStream(secondLevelFile)) {
             stream.write(1);
         }
-        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertFalse(semaphore.unWrap().tryAcquire(500L, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testDelete(File dir,
@@ -145,20 +147,20 @@ class DirWatcherTest {
 
         semaphore.condition((file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelFile.delete();
-        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.unWrap().tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
 
         semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         secondLevelFile.delete();
-        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertFalse(semaphore.unWrap().tryAcquire(500L, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.unWrap().drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private static boolean delete(File file) {
-        // 如果dir对应的文件不存在，则退出
+        //If file not exist,then exit directly
         if (!file.exists()) {
-            return false;
+            return true;
         }
 
         if (file.isFile()) {

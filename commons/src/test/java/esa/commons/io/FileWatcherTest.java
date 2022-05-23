@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileWatcherTest {
 
+    private static final long TIMEOUT = 5000L;
     private static final String FILE_PREFIX = "file-watcher-test";
 
     @Test
@@ -42,14 +43,14 @@ class FileWatcherTest {
                 .build();
         watcher.start();
         assertThrows(IllegalStateException.class, () -> watcher.start());
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
         assertThrows(IllegalStateException.class, () -> watcher.start());
 
         PathWatcher watcher1 = PathWatcher.watchFile(file.toPath().toAbsolutePath())
                 .onCreate((context) -> semaphore.release())
                 .build();
-        assertTrue(watcher1.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher1.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
         assertThrows(IllegalStateException.class, () -> watcher1.start());
     }
 
@@ -79,9 +80,9 @@ class FileWatcherTest {
                 .build();
         watcher.start();
         file.createNewFile();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testModify(File file) throws InterruptedException, IOException {
@@ -96,9 +97,9 @@ class FileWatcherTest {
         try (OutputStream stream = new FileOutputStream(file)) {
             stream.write(1);
         }
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testDelete(File file) throws InterruptedException, IOException {
@@ -111,9 +112,9 @@ class FileWatcherTest {
                 .build();
         watcher.start();
         file.delete();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testDelayCreate(File file) throws InterruptedException, IOException {
@@ -128,9 +129,9 @@ class FileWatcherTest {
         watcher.start();
         file.createNewFile();
         assertFalse(semaphore.tryAcquire(250L, TimeUnit.MILLISECONDS));
-        assertTrue(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testDelayModify(File file) throws InterruptedException, IOException {
@@ -147,9 +148,9 @@ class FileWatcherTest {
             stream.write(1);
         }
         assertFalse(semaphore.tryAcquire(250L, TimeUnit.MILLISECONDS));
-        assertTrue(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
     private void testDelayDelete(File file) throws InterruptedException, IOException {
@@ -164,8 +165,8 @@ class FileWatcherTest {
         watcher.start();
         file.delete();
         assertFalse(semaphore.tryAcquire(250L, TimeUnit.MILLISECONDS));
-        assertTrue(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertTrue(semaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
-        assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
+        assertTrue(watcher.stopAndWait(TIMEOUT, TimeUnit.MILLISECONDS));
     }
 }
