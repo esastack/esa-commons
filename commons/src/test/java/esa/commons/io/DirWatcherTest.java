@@ -16,13 +16,11 @@
 package esa.commons.io;
 
 import org.junit.jupiter.api.Test;
-import sun.security.action.GetPropertyAction;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.AccessController;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -33,121 +31,131 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DirWatcherTest {
 
-    private static final File tmpdir = new File(AccessController
-            .doPrivileged(new GetPropertyAction("java.io.tmpdir")));
-    private static final File dir = new File(tmpdir, "testWatch");
-    private static final File zeroLevelDir = new File(dir, "zeroLevelDir");
-    private static final File firstLevelDir = new File(zeroLevelDir, "firstLevelDir");
-    private static final File firstLevelFile = new File(zeroLevelDir, "firstLevelFile");
-    private static final File secondLevelFile = new File(firstLevelDir, "secondLevelFile");
-
-    static {
-        secondLevelFile.deleteOnExit();
-        firstLevelFile.deleteOnExit();
-        firstLevelDir.deleteOnExit();
-        zeroLevelDir.deleteOnExit();
-        dir.deleteOnExit();
-    }
-
-    private final Semaphore semaphore = new Semaphore(0);
-    private volatile Function<File, Boolean> semaphoreCondition = (file) -> false;
-
     @Test
     void testWatch() throws IOException, InterruptedException {
-        testCreate();
-        testModify();
-        testDelete();
-        delete(dir);
+        final File dir = FileTestUtils.newTemp("dir-watcher-test", "test-watch");
+        final File zeroLevelDir = new File(dir, "zeroLevelDir");
+        final File firstLevelDir = new File(zeroLevelDir, "firstLevelDir");
+        final File firstLevelFile = new File(zeroLevelDir, "firstLevelFile");
+        final File secondLevelFile = new File(firstLevelDir, "secondLevelFile");
+        final FileSemaphore semaphore = new FileSemaphore();
+        try {
+            testCreate(dir,
+                    zeroLevelDir,
+                    firstLevelDir,
+                    firstLevelFile,
+                    secondLevelFile,
+                    semaphore);
+
+            testModify(dir,
+                    zeroLevelDir,
+                    firstLevelDir,
+                    firstLevelFile,
+                    secondLevelFile,
+                    semaphore);
+
+            testDelete(dir,
+                    zeroLevelDir,
+                    firstLevelDir,
+                    firstLevelFile,
+                    secondLevelFile,
+                    semaphore);
+        } finally {
+            delete(dir);
+        }
     }
 
-    private void testCreate() throws InterruptedException, IOException {
+    private void testCreate(File dir,
+                            File zeroLevelDir,
+                            File firstLevelDir,
+                            File firstLevelFile,
+                            File secondLevelFile,
+                            FileSemaphore semaphore) throws InterruptedException, IOException {
         delete(dir);
         PathWatcher watcher = PathWatcher.watchDir(dir.toPath().toAbsolutePath(), 1)
-                .onCreate((context) -> {
-                    if (semaphoreCondition.apply(context.file())) {
-                        semaphore.release();
-                    }
-                })
+                .onCreate((context) -> semaphore.conditionalRelease(context.file()))
                 .build();
         watcher.start();
 
-        this.semaphoreCondition = (file) -> zeroLevelDir.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> zeroLevelDir.getAbsolutePath().equals(file.getAbsolutePath()));
         zeroLevelDir.mkdir();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
 
-        this.semaphoreCondition = (file) -> firstLevelDir.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> firstLevelDir.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelDir.mkdir();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
 
-        this.semaphoreCondition = (file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelFile.createNewFile();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
 
-        this.semaphoreCondition = (file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         secondLevelFile.createNewFile();
-        assertFalse(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testModify() throws InterruptedException, IOException {
+    private void testModify(File dir,
+                            File zeroLevelDir,
+                            File firstLevelDir,
+                            File firstLevelFile,
+                            File secondLevelFile,
+                            FileSemaphore semaphore) throws InterruptedException, IOException {
         zeroLevelDir.mkdir();
         firstLevelDir.mkdir();
         PathWatcher watcher = PathWatcher.watchDir(dir.toPath().toAbsolutePath(), 1)
-                .onModify((context) -> {
-                    if (semaphoreCondition.apply(context.file())) {
-                        semaphore.release();
-                    }
-                })
+                .onModify((context) -> semaphore.conditionalRelease(context.file()))
                 .build();
         watcher.start();
 
-        this.semaphoreCondition = (file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
-        OutputStream stream = new FileOutputStream(firstLevelFile);
-        stream.write(1);
-        stream.close();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        semaphore.condition((file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
+        try (OutputStream stream = new FileOutputStream(firstLevelFile)) {
+            stream.write(1);
+        }
+        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
 
-        this.semaphoreCondition = (file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
-        stream = new FileOutputStream(secondLevelFile);
-        stream.write(1);
-        stream.close();
-        assertFalse(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
+        try (OutputStream stream = new FileOutputStream(secondLevelFile)) {
+            stream.write(1);
+        }
+        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testDelete() throws InterruptedException, IOException {
+    private void testDelete(File dir,
+                            File zeroLevelDir,
+                            File firstLevelDir,
+                            File firstLevelFile,
+                            File secondLevelFile,
+                            FileSemaphore semaphore) throws InterruptedException, IOException {
         zeroLevelDir.mkdir();
         firstLevelDir.mkdir();
         firstLevelFile.createNewFile();
         secondLevelFile.createNewFile();
         PathWatcher watcher = PathWatcher.watchDir(dir.toPath().toAbsolutePath(), 1)
-                .onDelete((context) -> {
-                    if (semaphoreCondition.apply(context.file())) {
-                        semaphore.release();
-                    }
-                })
+                .onDelete((context) -> semaphore.conditionalRelease(context.file()))
                 .build();
         watcher.start();
 
-        this.semaphoreCondition = (file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> firstLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         firstLevelFile.delete();
-        assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertTrue(semaphore.unWrap().tryAcquire(1000L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
 
-        this.semaphoreCondition = (file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath());
+        semaphore.condition((file) -> secondLevelFile.getAbsolutePath().equals(file.getAbsolutePath()));
         secondLevelFile.delete();
-        assertFalse(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
-        assertEquals(semaphore.drainPermits(), 0);
+        assertFalse(semaphore.unWrap().tryAcquire(300L, TimeUnit.MILLISECONDS));
+        assertEquals(semaphore.unWrap().drainPermits(), 0);
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    public static boolean delete(File file) {
+    private static boolean delete(File file) {
         // 如果dir对应的文件不存在，则退出
         if (!file.exists()) {
             return false;
@@ -163,4 +171,24 @@ class DirWatcherTest {
 
         return file.delete();
     }
+
+    private static final class FileSemaphore {
+        private final Semaphore semaphore = new Semaphore(0);
+        private volatile Function<File, Boolean> releaseCondition = (file) -> false;
+
+        private void condition(Function<File, Boolean> releaseCondition) {
+            this.releaseCondition = releaseCondition;
+        }
+
+        private Semaphore unWrap() {
+            return semaphore;
+        }
+
+        private void conditionalRelease(File file) {
+            if (releaseCondition.apply(file)) {
+                semaphore.release();
+            }
+        }
+    }
+
 }

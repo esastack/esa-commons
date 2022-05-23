@@ -16,13 +16,11 @@
 package esa.commons.io;
 
 import org.junit.jupiter.api.Test;
-import sun.security.action.GetPropertyAction;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.AccessController;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -33,18 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileWatcherTest {
 
-    private static final File tmpdir = new File(AccessController
-            .doPrivileged(new GetPropertyAction("java.io.tmpdir")));
-    private static final File file = new File(tmpdir, "testWatch");
-
-    static {
-        file.deleteOnExit();
-    }
-
-    private final Semaphore semaphore = new Semaphore(0);
+    private static final String FILE_PREFIX = "file-watcher-test";
 
     @Test
-    void testStartAndStop() throws InterruptedException {
+    void testStartAndStop() throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
+        final File file = FileTestUtils.newTemp(FILE_PREFIX, "test-start-and-Stop");
         PathWatcher watcher = PathWatcher.watchFile(file.toPath().toAbsolutePath())
                 .onCreate((context) -> semaphore.release())
                 .build();
@@ -63,19 +55,22 @@ class FileWatcherTest {
 
     @Test
     void testWatch() throws IOException, InterruptedException {
-        testCreate();
-        testModify();
-        testDelete();
+        final File file = FileTestUtils.newTemp(FILE_PREFIX, "test-watch");
+        testCreate(file);
+        testModify(file);
+        testDelete(file);
     }
 
     @Test
     void testDelayWatch() throws IOException, InterruptedException {
-        testDelayCreate();
-        testDelayModify();
-        testDelayDelete();
+        final File file = FileTestUtils.newTemp(FILE_PREFIX, "test-delay-watch");
+        testDelayCreate(file);
+        testDelayModify(file);
+        testDelayDelete(file);
     }
 
-    private void testCreate() throws InterruptedException, IOException {
+    private void testCreate(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (file.exists()) {
             file.delete();
         }
@@ -89,7 +84,8 @@ class FileWatcherTest {
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testModify() throws InterruptedException, IOException {
+    private void testModify(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -97,15 +93,16 @@ class FileWatcherTest {
                 .onModify((context) -> semaphore.release())
                 .build();
         watcher.start();
-        OutputStream stream = new FileOutputStream(file);
-        stream.write(1);
-        stream.close();
+        try (OutputStream stream = new FileOutputStream(file)) {
+            stream.write(1);
+        }
         assertTrue(semaphore.tryAcquire(1000L, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testDelete() throws InterruptedException, IOException {
+    private void testDelete(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -119,7 +116,8 @@ class FileWatcherTest {
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testDelayCreate() throws InterruptedException, IOException {
+    private void testDelayCreate(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (file.exists()) {
             file.delete();
         }
@@ -135,7 +133,8 @@ class FileWatcherTest {
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testDelayModify() throws InterruptedException, IOException {
+    private void testDelayModify(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -144,16 +143,17 @@ class FileWatcherTest {
                 .delay(500L)
                 .build();
         watcher.start();
-        OutputStream stream = new FileOutputStream(file);
-        stream.write(1);
-        stream.close();
+        try (OutputStream stream = new FileOutputStream(file)) {
+            stream.write(1);
+        }
         assertFalse(semaphore.tryAcquire(250L, TimeUnit.MILLISECONDS));
         assertTrue(semaphore.tryAcquire(300L, TimeUnit.MILLISECONDS));
         assertEquals(semaphore.drainPermits(), 0);
         assertTrue(watcher.stopAndWait(100L, TimeUnit.MILLISECONDS));
     }
 
-    private void testDelayDelete() throws InterruptedException, IOException {
+    private void testDelayDelete(File file) throws InterruptedException, IOException {
+        final Semaphore semaphore = new Semaphore(0);
         if (!file.exists()) {
             file.createNewFile();
         }
