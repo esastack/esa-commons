@@ -42,6 +42,10 @@ class DirWatcherTest {
     private static final File secondLevelFile = new File(firstLevelDir, "secondLevelFile");
 
     static {
+        secondLevelFile.deleteOnExit();
+        firstLevelFile.deleteOnExit();
+        firstLevelDir.deleteOnExit();
+        zeroLevelDir.deleteOnExit();
         dir.deleteOnExit();
     }
 
