@@ -19,7 +19,7 @@
     <parent>
         <groupId>io.esastack</groupId>
         <artifactId>commons-netty</artifactId>
-        <version>0.2.1</version>
+        <version>0.2.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>commons-netty-core</artifactId>
