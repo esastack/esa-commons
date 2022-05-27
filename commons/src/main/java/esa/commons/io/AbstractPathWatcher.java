@@ -112,13 +112,8 @@ abstract class AbstractPathWatcher implements PathWatcher {
             }
             throw e;
         }
-        executor.execute(() -> {
-            //If stop is executed firstly, it will end directly at start()
-            if (status == Status.STARTED) {
-                watch();
-            }
-        });
         status = Status.STARTED;
+        executor.execute(this::watch);
     }
 
     @Override
