@@ -864,7 +864,7 @@ public class SpiLoader<T> {
                 if (!annotationKey.equals(key)) {
                     continue;
                 }
-                if (StringUtils.isBlank(value) || annotationValue.equals(value)) {
+                if (StringUtils.isBlank(annotationValue) || annotationValue.equals(value)) {
                     return true;
                 }
             }
